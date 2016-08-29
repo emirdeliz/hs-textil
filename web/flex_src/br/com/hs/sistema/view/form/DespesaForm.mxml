@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:component="br.com.hs.sistema.view.component.*" xmlns:ns2="br.com.thinklab.util.control.*"
+	width="568" title="Manutenção Despesa" styleName="formMain" showCloseButton="true" close="{this.fechar()}">	
+	<mx:Form width="100%" height="100%">	
+		<mx:FormItem label="Despesa:" direction="horizontal" required="true" width="100%">
+			<component:TextInputCustom styleName="small" id="txtIdTipoDespesa" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtTipoDespesa" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidTipoDespesa" includeInLayout="false" visible="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomTipoDespesa()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdTipoDespesa, txtTipoDespesa, txtOidTipoDespesa])}"/>
+		</mx:FormItem>
+		<component:FormItemCustom label="Observação:" height="50">
+			<component:TextAreaCustom id="txtObservacao"/>		
+		</component:FormItemCustom>
+		<mx:FormItem label="Data despesa:" required="true">
+			<mx:DateField id="txtData" formatString="DD/MM/YYYY"/>
+		</mx:FormItem>
+		<mx:FormItem label="Valor total:" required="true">
+			<ns2:DecimalInput styleName="small" id="txtValor" text="0,00" currencyFormat="BR" precision="2" maxChars="7"/>
+		</mx:FormItem>
+		<mx:HBox>
+			<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+			<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+		</mx:HBox>
+	</mx:Form>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.sistema.view.zoom.ZoomTipoDespesa;			
+			import br.com.hs.sistema.constant.TipoCaixa;
+			import br.com.hs.model.entity.Caixa;
+			import br.com.hs.model.entity.TipoDespesa;
+			import br.com.hs.model.entity.Despesa;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;			
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;		
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Caixa;
+			
+			private var callbackFunction:Function;
+			
+			public function set entidade(item:Object):void{	
+				this.item = item as Caixa;	
+				if(this.item!=null){
+					this.txtObservacao.text = this.item.despesa.observacao;
+					this.txtValor.text = Utils.formatDec(this.item.valor.toString());
+					this.txtData.selectedDate = this.item.dataVencimento;
+					this.txtTipoDespesa.text = this.item.despesa.tipoDespesa.nome;
+					this.txtIdTipoDespesa.text = this.item.despesa.tipoDespesa.id;
+					this.txtOidTipoDespesa.text = this.item.despesa.tipoDespesa.oid.toString();
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+					
+			private function salvar():void{
+				
+				if(!Utils.validaCampos([txtOidTipoDespesa, txtValor, txtData])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}	
+				
+				if(this.item == null){
+					this.item = new Caixa();
+					this.item.despesa =  new Despesa();										
+				}
+														
+				var t:TipoDespesa = new TipoDespesa();
+				t.oid = new Number(this.txtOidTipoDespesa.text);				
+						
+				this.item.despesa.tipoDespesa = t;
+				this.item.despesa.observacao = this.txtObservacao.text;			
+				this.item.dataVencimento = this.txtData.selectedDate;				
+				this.item.valor = Utils.parseDec(this.txtValor.decimalText);				
+				
+				this.item.dataCaixa = new Date();
+				this.item.tipo = TipoCaixa.DESPESA;								
+										
+				var remoteObject:RemoteObject = ServiceLocator.getDespesaService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);						
+				remoteObject.salvar(this.item);
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");
+				callbackFunction();
+				fechar();
+			}
+			
+			private function abrirZoomTipoDespesa():void{
+				var frm:ZoomTipoDespesa = new ZoomTipoDespesa();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+				frm.callback = selecionaTipoDespesa;						
+			}
+			
+			private function selecionaTipoDespesa(t:TipoDespesa):void{
+				txtIdTipoDespesa.text = t.id;
+				txtTipoDespesa.text = t.nome;
+				txtOidTipoDespesa.text = t.oid.toString();
+			}
+						
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

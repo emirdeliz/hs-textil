@@ -1,0 +1,8 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+	<item android:title="Voltar"
+		android:alphabeticShortcut="Voltar"
+		android:icon="@drawable/voltar" />
+	<item android:title="Novo" 
+		android:alphabeticShortcut="Novo"
+		android:icon="@drawable/add" />
+</menu>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:component="br.com.hs.sistema.view.component.*" 
+	width="668" title="Manutenção Produto" styleName="formMain" showCloseButton="true" close="{this.fechar()}" xmlns:ns1="br.com.thinklab.util.control.*">	
+	<mx:Form width="100%" height="100%">	
+		<component:FormItemCustom label="Cod:" required="true">
+			<component:TextInputCustom styleName="small" id="txtId" />
+		</component:FormItemCustom >
+		<component:FormItemCustom label="Nome:" required="true">
+			<component:TextInputCustom styleName="normal" id="txtNome"/>
+		</component:FormItemCustom >
+		<mx:FormItem label="Valor unitário:" required="true">
+			<ns1:DecimalInput styleName="small" id="txtValorUnitario" text="0,00" currencyFormat="BR" precision="2" maxChars="8"/>
+		</mx:FormItem>
+		<component:FormItemCustom label="Descrição:" height="50">
+			<component:TextAreaCustom id="txtDescricao"/>		
+		</component:FormItemCustom>
+		<mx:FormItem label="Data última venda:">
+			<component:TextInputCustom styleName="small" id="txtUltimaVenda"/>
+		</mx:FormItem>
+		<component:FormItemCustom label="Unidade medida:" direction="horizontal" required="true">
+			<component:TextInputCustom styleName="small" id="txtIdUnidade" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtUnidade" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidUnidade" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomUnidade()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtUnidade, txtIdUnidade, txtOidUnidade])}"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Materiais:" width="100%">
+			<mx:DataGrid width="100%" id="grid" rowCount="4">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Cod." dataField="material.id" width="2"/>
+					<mx:DataGridColumn headerText="Nome" dataField="material.nome" width="6"/>	
+					<mx:DataGridColumn headerText="Quantidade" dataField="quantidade" width="6"/>				
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox verticalAlign="middle" width="100%">
+				<mx:Button id="btAdicionar" styleName="btNovo" click="adicionarItem()"/>					
+				<mx:Button id="btRemover" styleName="btExcluir" click="removerItem()"/>					
+			</mx:HBox>
+		</component:FormItemCustom>
+		<mx:FormItem>
+			<mx:CheckBox id="cbxInativo" label="Inativo"/>
+		</mx:FormItem>
+		<mx:HBox>
+			<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+			<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+		</mx:HBox>
+	</mx:Form>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.MaterialProduto;
+			import mx.collections.ArrayCollection;
+			import br.com.hs.sistema.view.zoom.ZoomMaterial;
+			import br.com.hs.model.entity.Material;
+			import br.com.hs.sistema.view.zoom.ZoomUnidadeMedida;
+			import br.com.hs.model.entity.UnidadeMedida;
+			import br.com.hs.model.entity.Produto;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.entity.Cargo;
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import br.com.hs.model.entity.Atendimento;			
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Produto;
+						
+			private var callbackFunction:Function;
+			
+			public function set entidade(item:Object):void{	
+				this.item = item as Produto;	
+				if(this.item!=null){
+					this.txtId.text = this.item.id;
+					this.txtNome.text = this.item.nome;
+					this.txtDescricao.text = this.item.descricao;
+					this.txtValorUnitario.text = Utils.formatDec(this.item.valor.toString());
+					this.txtIdUnidade.text = this.item.unidade.id;
+					this.txtUnidade.text = this.item.unidade.nome;
+					this.txtOidUnidade.text = this.item.unidade.oid.toString();
+					this.txtUltimaVenda.text = Utils.formatDat(this.item.ultimaVenda);
+					this.cbxInativo.selected = this.item.inativo;
+					this.grid.dataProvider = this.item.materiais;
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+					
+			private function salvar():void{
+				if(!Utils.validaCampos([txtId, txtNome, txtValorUnitario, txtOidUnidade])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}			
+				
+				if(this.item == null){
+					this.item = new Produto();	
+					this.item.unidade = new UnidadeMedida();																
+				}
+				
+				this.item.id = txtId.text;
+				this.item.nome = txtNome.text;
+				this.item.descricao = txtDescricao.text;
+				this.item.materiais = this.grid.dataProvider as ArrayCollection;
+				this.item.valor = Utils.parseDec(txtValorUnitario.text);				
+				this.item.unidade.oid = new Number(txtOidUnidade.text);
+			this.item.inativo = cbxInativo.selected;
+				if(isNaN(this.item.qtdEstoque))
+					this.item.qtdEstoque = 0;						
+				var remoteObject:RemoteObject = ServiceLocator.getProdutoService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);		
+				remoteObject.salvar(this.item);
+			}
+						
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");
+				callbackFunction();
+				fechar();
+			}
+					
+			private function abrirZoomUnidade():void{
+				var frm:ZoomUnidadeMedida = new ZoomUnidadeMedida();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaUnidade;						
+			}
+			
+			private function selecionaUnidade(u:UnidadeMedida):void{
+				if(txtOidUnidade.text!=u.oid.toString()){
+					txtIdUnidade.text = u.id;
+					txtUnidade.text = u.nome;
+					txtOidUnidade.text = u.oid.toString();								
+				}
+			}
+						
+			private function adicionarItem():void{
+				var frm:ItemMaterialProduto = new ItemMaterialProduto();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+				frm.callback = atualizaMateriais;			
+			}
+			
+			private function atualizaMateriais(m:MaterialProduto):void{
+				if(this.grid.dataProvider == null)
+					this.grid.dataProvider = new ArrayCollection;
+					
+				if(this.validaItemAdicionado(m.material)){				
+					(this.grid.dataProvider as ArrayCollection).addItem(m);
+				}
+			}
+			
+			private function validaItemAdicionado(item:Object):Boolean{
+				for each(var o:Object in this.grid.dataProvider){
+					if(item.oid == o.oid){
+						Alert.show("Item já foi adicionado a lista, favor selecionar outro item.");
+						return false;
+					}
+				}
+				return true;
+			}
+			
+			private function removerItem():void{
+				if(this.grid.selectedItem == null){
+					Alert.show("Selecione o item a ser removido");
+				}else{
+					(this.grid.dataProvider as ArrayCollection).removeItemAt(this.grid.selectedIndex);
+				}
+			}
+						
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

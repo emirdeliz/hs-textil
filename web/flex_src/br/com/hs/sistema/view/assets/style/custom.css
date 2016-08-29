@@ -1,0 +1,155 @@
+/* CSS file */
+FormItemCustom {
+	percentWidth: 100;	
+}
+
+TextAreaCustom {
+	width: 300;   
+	height: 50;		
+}
+
+TextAreaCustom {	
+	disabledColor: #5E4F4F;		
+}
+
+TextInput{
+	disabledColor: #5E4F4F;
+}
+
+.large {	 
+	width: 300;
+	height: 22;
+}
+
+.normal {	
+	width: 200;
+	height: 22;
+}
+
+.small {
+	width: 100;
+	height: 22;
+}
+
+.canLogo{
+	percentWidth: 100;
+	height: 160;
+	background-image: Embed('../img/HSTextil.png');
+	background-color: FFFFFF;
+}
+
+DataGrid {
+	rollOverColor: #E98600;
+	selectionColor: #E98600;
+	color: #585555;
+	textRollOverColor: #712323;
+	textSelectedColor: #000000;	
+	verticalGridLineColor: #E2E2E2;
+	horizontalGridLines: true;
+	horizontalGridLineColor: #E2E2E2;
+	backgroundDisabledColor: #1C1A19;
+	alternatingItemColors: #D8D8D8, #E8E8E8;
+	headerStyleName: dataGridHeader;
+	selectionDuration: 1000;
+	borderColor: #E2E2E2;
+	headerColors: #9A9494, #B09F9F;
+	borderStyle: none;
+	fontWeight: bold;
+	fontStyle: normal;
+	leading: 2;
+	textAlign: left;
+		
+	/* focusSkin: Embed(source="../img/textBoxFocus.png",
+	scaleGridLeft="5", scaleGridTop="5", scaleGridRight="10", scaleGridBottom="10"); */
+}
+
+.menuBarCustom{	
+	backgroundSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemUpSkin");
+	itemUpSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemUpSkin");
+	itemOverSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemUpSkin");
+	itemDownSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemDownSkin");	
+	itemSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemUpSkin");
+}
+
+.menuitem {
+	backgroundSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemUpSkin");
+	itemUpSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemUpSkin");
+	itemOverSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemOverSkin");
+	itemDownSkin: Embed(source="yflexskin.swf", symbol="MenuBar_itemDownSkin");	
+}
+
+.formMain{
+	/*backgroundImage: Embed(source="yflexskin.swf",symbol="BackgroundImage")*/;
+	border-style: solid;		
+	cornerRadius: 6;	
+}
+
+.btSelecionar {
+	skin:Embed(source="../img/icones/tick.png");
+	down-skin: Embed(source="../img/icones/tick.png");	
+}
+
+.btEdit {
+	skin: Embed(source="../img/icones/page_white_edit.png");
+	down-skin: Embed(source="../img/icones/page_white_edit.png");	
+}
+
+.btNovo {
+	skin: Embed(source="../img/icones/page_white_add.png");
+	down-skin: Embed(source="../img/icones/page_white_add.png");	
+}
+
+.btExcluir {
+	skin: Embed(source="../img/icones/page_white_delete.png");
+	down-skin: Embed(source="../img/icones/page_white_delete.png");	
+}
+
+.btSalvar {
+ 	skin: Embed(source="../img/icones/page_save.png");
+ 	down-skin: Embed(source="../img/icones/page_save.png");
+}
+
+.btFechar { 		
+	skin: Embed(source="../img/icones/tab_go.png");
+	down-skin: Embed(source="../img/icones/tab_go.png");		
+}
+
+.btZoom {
+	skin: Embed(source="../img/icones/zoom.png");
+	down-skin: Embed(source="../img/icones/zoom.png");	
+}
+
+.btLimpar {
+	skin: Embed(source="../img/icones/pill.png");
+	down-skin: Embed(source="../img/icones/pill.png");	
+}
+
+.btFiltrar{
+	skin: Embed(source="../img/icones/page_white_find.png");
+	down-skin: Embed(source="../img/icones/page_white_find.png");	
+}
+
+.btPagar{
+	skin: Embed(source="../img/icones/cart_put.png");
+	down-skin: Embed(source="../img/icones/cart_put.png");	
+}
+
+.btCotacao{
+	skin: Embed(source="../img/icones/find.png");
+	down-skin: Embed(source="../img/icones/find.png");	
+}
+
+.btVisualizar{
+	skin: Embed(source="../img/icones/application_view_list.png");
+	down-skin: Embed(source="../img/icones/application_view_list.png");	
+}
+
+.btComprar{
+	skin: Embed(source="../img/icones/cart_remove.png");
+	down-skin: Embed(source="../img/icones/cart_remove.png");	
+}
+
+.btCopiar{
+	skin: Embed(source="../img/icones/page_white_copy.png");
+	down-skin: Embed(source="../img/icones/page_white_copy.png");	
+}

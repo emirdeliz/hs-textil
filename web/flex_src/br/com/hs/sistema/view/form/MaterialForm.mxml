@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:component="br.com.hs.sistema.view.component.*" 
+	title="Manutenção Material" styleName="formMain" showCloseButton="true" close="{this.fechar()}">	
+	<mx:Form width="100%" height="100%">	
+		<component:FormItemCustom label="Cod:" required="true">
+			<component:TextInputCustom styleName="small" id="txtId" />
+		</component:FormItemCustom >
+		<component:FormItemCustom label="Nome:" required="true">
+			<component:TextInputCustom styleName="normal" id="txtNome"/>
+		</component:FormItemCustom >
+		<component:FormItemCustom label="Descrição:" height="50">
+			<component:TextAreaCustom id="txtDescricao"/>		
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Unidade:" direction="horizontal" width="550">
+			<component:TextInputCustom styleName="small" id="txtIdUnidade" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtUnidade" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidUnidade" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomUnidade()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtUnidade, txtIdUnidade, txtOidUnidade])}"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Qtd. mínima estoque:" required="true">
+			<component:TextInputCustom styleName="small" id="txtQtdMinimaEstoque"/>
+		</component:FormItemCustom >
+		<mx:FormItem>
+			<mx:CheckBox id="cbxInativo" label="Inativo"/>
+		</mx:FormItem>
+		<mx:HBox>
+			<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+			<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+		</mx:HBox>
+	</mx:Form>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.sistema.view.zoom.ZoomUnidadeMedida;
+			import br.com.hs.model.entity.UnidadeMedida;
+			import br.com.hs.model.entity.Material;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.entity.Cargo;
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import br.com.hs.model.entity.Atendimento;			
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Material;
+					
+			private var callbackFunction:Function;
+			
+			public function set entidade(item:Object):void{	
+				this.item = item as Material;	
+				if(this.item!=null){
+					this.txtId.text = this.item.id;
+					this.txtNome.text = this.item.nome;
+					this.txtDescricao.text = this.item.descricao;
+					this.txtIdUnidade.text = this.item.unidade.id;
+					this.txtUnidade.text = this.item.unidade.nome;
+					this.txtOidUnidade.text = this.item.unidade.oid.toString();
+					this.txtQtdMinimaEstoque.text = this.item.qtdMinimaEstoque.toString();
+					this.cbxInativo.selected = this.item.inativo;
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+					
+			private function salvar():void{
+				
+				if(!Utils.validaCampos([txtId, txtNome, txtOidUnidade, txtQtdMinimaEstoque])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}	
+				
+				if(this.item == null){
+					this.item = new Material();		
+					this.item.unidade = new UnidadeMedida();
+					this.item.qtdEstoque = 0;							
+				}
+				
+				this.item.id = txtId.text;
+				this.item.nome = txtNome.text;
+				this.item.descricao = txtDescricao.text;
+				this.item.unidade.oid = new Number(txtOidUnidade.text);
+				this.item.qtdMinimaEstoque = new Number(txtQtdMinimaEstoque.text);
+				this.item.inativo = cbxInativo.selected;
+							
+				var remoteObject:RemoteObject = ServiceLocator.getMaterialService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);		
+				remoteObject.salvar(this.item);
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");
+				callbackFunction();
+				fechar();
+			}
+			
+			private function abrirZoomUnidade():void{
+				var frm:ZoomUnidadeMedida = new ZoomUnidadeMedida();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaUnidade;						
+			}
+			
+			private function selecionaUnidade(u:UnidadeMedida):void{
+				if(txtOidUnidade.text!=u.oid.toString()){
+					txtIdUnidade.text = u.id;
+					txtUnidade.text = u.nome;
+					txtOidUnidade.text = u.oid.toString();								
+				}
+			}
+						
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

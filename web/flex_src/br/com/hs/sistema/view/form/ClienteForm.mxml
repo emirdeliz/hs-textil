@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:component="br.com.hs.sistema.view.component.*" 
+	width="598" title="Manutenção Cliente" styleName="formMain" showCloseButton="true" close="{this.fechar()}">	
+	<mx:Form width="100%" height="100%">
+		<component:FormItemCustom label="Cod.:" required="true">
+			<component:TextInputCustom styleName="small" id="txtId"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Nome:" required="true">
+			<component:TextInputCustom styleName="normal" id="txtNome"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Contato:">
+			<component:TextInputCustom styleName="normal" id="txtContato"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="E-mail:">
+			<component:TextInputCustom styleName="normal" id="txtEmail"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Endereço:" height="50" required="true">
+			<component:TextAreaCustom  id="txtEndereco"/>		
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Informações adicionais:" height="50">
+			<component:TextAreaCustom  id="txtInformacoesAdicionais"/>		
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Potêncial:">
+			<mx:ComboBox id="cbxPotencial">
+				<mx:dataProvider>
+					<mx:Object id="a">Alto</mx:Object>
+					<mx:Object id="b">Médio</mx:Object>
+					<mx:Object id="c">Baixo</mx:Object>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</component:FormItemCustom>				
+		<mx:FormItem label="Representante:" direction="horizontal" required="true" width="100%">
+			<component:TextInputCustom styleName="small" id="txtIdRepresentante" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtRepresentante" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidRepresentante" includeInLayout="false" visible="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomRepresentante()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdRepresentante, txtRepresentante, txtOidRepresentante])}"/>
+		</mx:FormItem>
+		<mx:FormItem>
+			<mx:CheckBox id="cbxInativo" label="Inativo"/>
+		</mx:FormItem>
+		<mx:HBox>
+			<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+			<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+		</mx:HBox>
+	</mx:Form>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.sistema.view.zoom.ZoomRepresentante;
+			import br.com.hs.model.entity.Representante;			
+			import br.com.hs.model.entity.Cliente;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;			
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;						
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Cliente
+			
+			private var callbackFunction:Function;
+			
+			public function set entidade(item:Object):void{	
+				this.item = item as Cliente;	
+				if(this.item!=null){
+					this.txtId.text = this.item.id;
+					this.txtNome.text = this.item.nome;
+					this.txtContato.text = this.item.contato;
+					this.txtEndereco.text = this.item.endereco;
+					this.txtEmail.text = this.item.email;
+					this.txtInformacoesAdicionais.text = this.item.informacoesAdicionais;
+					this.txtIdRepresentante.text = this.item.representante.id;
+					this.txtOidRepresentante.text = this.item.representante.oid.toString();
+					this.txtRepresentante.text = this.item.representante.nome;
+					this.cbxPotencial.selectedItem = this.item.potencial;
+					this.cbxInativo.selected = this.item.inativo;
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+					
+			private function salvar():void{
+				
+				if(!Utils.validaCampos([txtId, txtNome, txtEndereco, txtOidRepresentante])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}	
+				
+				if(this.item == null){
+					this.item = new Cliente();
+					this.item.representante = new Representante();									
+				}				
+					
+				this.item.id = txtId.text;
+				this.item.nome = txtNome.text;				
+				this.item.contato =	txtContato.text;	
+				this.item.endereco = txtEndereco.text;	
+				this.item.email = txtEmail.text;
+				this.item.informacoesAdicionais = txtInformacoesAdicionais.text;
+				this.item.potencial = cbxPotencial.selectedItem.toString();
+				this.item.representante.oid = new Number(txtOidRepresentante.text);
+				this.item.inativo = this.cbxInativo.selected;
+							
+				var remoteObject:RemoteObject = ServiceLocator.getClienteService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);		
+				remoteObject.salvar(this.item);
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");
+				callbackFunction();
+				fechar();
+			}
+			
+			private function abrirZoomRepresentante():void{
+				var frm:ZoomRepresentante = new ZoomRepresentante();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+				frm.callback = selecionaRepresentante;						
+			}
+			
+			private function selecionaRepresentante(r:Representante):void{
+				txtIdRepresentante.text = r.id;
+				txtRepresentante.text = r.nome;
+				txtOidRepresentante.text = r.oid.toString();
+			}
+						
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

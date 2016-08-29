@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" showCloseButton="true" close="{this.fechar()}" 
+		xmlns:component="br.com.hs.sistema.view.component.*" title="Manutenção Cotação" width="732" height="375">
+	<mx:Form width="100%" height="100%">
+		<component:FormItemCustom label="Cod:" required="true">
+			<component:TextInputCustom styleName="small" id="txtIdMaterial" />
+			<component:TextInputCustom styleName="small" id="txtOidMaterial" visible="false" includeInLayout="false"/>
+		</component:FormItemCustom >
+		<component:FormItemCustom label="Nome:" required="true">
+			<component:TextInputCustom styleName="normal" id="txtMaterial"/>
+		</component:FormItemCustom >
+		<mx:FormItem label="Fornecedores:" width="100%">
+			<mx:DataGrid width="100%" id="grid" rowCount="8">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Nome" dataField="fornecedor.nome" width="4"/>				
+					<mx:DataGridColumn headerText="Observação" dataField="observacao" labelFunction="labelFunctionCotacao" width="6"/>
+					<mx:DataGridColumn headerText="Valor" dataField="valor" labelFunction="labelFunctionCotacao" width="2"/>
+					<mx:DataGridColumn headerText="Data" dataField="data" labelFunction="labelFunctionCotacao" width="2"/> 
+				</mx:columns>
+			</mx:DataGrid>			
+		</mx:FormItem>		
+	</mx:Form>	
+	<mx:HBox>				
+		<mx:Button id="btComprar" styleName="btComprar" click="comprar()"/>
+		<mx:Button styleName="btExcluir" click="excluir()"/>		
+		<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.Funcionario;
+			import mx.controls.dataGridClasses.DataGridColumn;
+			import br.com.hs.model.entity.Fornecedor;		
+			import br.com.hs.model.entity.CotacaoMaterial;
+			import br.com.hs.model.entity.Material;
+			import br.com.hs.sistema.constant.TipoCaixa;		
+			import br.com.hs.model.entity.Material;
+			import mx.collections.ArrayCollection;
+			import br.com.hs.model.entity.Compra;
+			import br.com.hs.model.entity.Caixa;
+			import br.com.hs.model.entity.MaterialCompra;
+			import mx.events.CloseEvent;
+			import mx.utils.ObjectUtil;
+			import br.com.hs.model.entity.Cotacao;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;			
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import br.com.hs.model.entity.Atendimento;			
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Material;
+						
+			private var callbackFunction:Function;
+			
+			public function set entidade(item:Object):void{	
+				this.item = item as Material;	
+				if(this.item!=null){
+					this.txtIdMaterial.text = this.item.id;
+					this.txtMaterial.text = this.item.nome;										
+					this.buscaCotacoes();					
+				}							
+			}
+						
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+						
+			private function buscaCotacoes():void{
+				var remoteObject:RemoteObject = ServiceLocator.getCotacaoService();	
+				var operation:AbstractOperation = remoteObject.getOperation("buscarTodosPorMaterial");				
+				operation.addEventListener(ResultEvent.RESULT, onResultBuscaCotacoes);						
+				remoteObject.buscarTodosPorMaterial(this.item);				
+			}
+			
+			private function onResultBuscaCotacoes(event:ResultEvent):void{
+				this.grid.dataProvider = event.result as ArrayCollection;
+				if((this.grid.dataProvider as ArrayCollection).length <=0)		
+					Alert.show("Não foram encontradas cotações para o material informado!");		
+			}
+			
+			private function comprar():void{
+				var item:Object = grid.selectedItem;
+				if(item == null){
+					Alert.show("Favor, selecione o item a ser faturado");
+				}else{
+					Alert.show("Confirmar compra?", "", Alert.YES|Alert.NO, this, confirmaCompra, null, Alert.NO);									
+				}											
+			}
+			
+			private function confirmaCompra(event:CloseEvent):void{
+				if (event.detail == Alert.YES){				
+									
+					var m:MaterialCompra = new MaterialCompra();
+					m.material =  this.item;				
+					
+					for each(var cm:Object in this.grid.selectedItem.cotacoes){
+						if(cm.material.oid == item.oid){
+							m.valorUnitario = cm.valor;								
+						}
+					}
+					var frm:ItemMaterialCotacaoCompra = new ItemMaterialCotacaoCompra();
+					frm.materialCompraCotacao = m;
+					PopUpManager.addPopUp(frm, this, true);
+					PopUpManager.centerPopUp(frm);					
+					frm.callback = geraCompra;					
+				}
+			}
+			
+			private function geraCompra(o:Object):void{								
+				var materiais:ArrayCollection = new ArrayCollection();				
+				materiais.addItem(o.materialCompra);
+				
+				var caixa:Caixa = new Caixa();
+				caixa.compra = new Compra();
+				caixa.compra.materiais = materiais;				
+				caixa.compra.fornecedor = this.grid.selectedItem.fornecedor;											
+				caixa.dataVencimento = o.dataVencimentoFatura;				
+				caixa.valor = o.valorTotal;					
+				caixa.dataCaixa = new Date();
+				caixa.observacao = o.observacao;
+				caixa.tipo = TipoCaixa.DESPESA;		
+				caixa.compra.funcionario = new Funcionario();
+				caixa.compra.funcionario.oid = this.parentDocument.usuarioCorrente.oid;				 
+														
+				var remoteObject:RemoteObject = ServiceLocator.getCompraService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);						
+				remoteObject.salvar(caixa);
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Compra efetuada com sucesso");
+				this.fechar();			
+			}
+			
+			private function excluir():void{
+				var item:Object = grid.selectedItem;
+				if(item == null){
+					Alert.show("Favor, selecione o item a ser excluído");
+				}else{
+					Alert.show("Confirmar exclusão?", "", Alert.YES|Alert.NO, this, confirmaExluir, null, Alert.NO);				
+				}				
+			}
+			
+			private function confirmaExluir(event:CloseEvent):void{
+				if (event.detail == Alert.YES){
+					var remoteObject:RemoteObject = ServiceLocator.getCotacaoService();				
+					var operation:AbstractOperation = remoteObject.getOperation("deletar");				
+					operation.addEventListener(ResultEvent.RESULT, onResultExcluir);		
+					remoteObject.deletar(this.grid.selectedItem);
+				}
+			}
+			
+			private function onResultExcluir(event:ResultEvent):void{
+				Alert.show("Exclusão efetuada com sucesso.");
+				this.callbackFunction();
+				this.fechar();
+			}
+			
+			private function labelFunctionCotacao(row:Object, column:DataGridColumn):String{			
+				var dataField:String = column.dataField;
+				var c:Cotacao = row as Cotacao;			
+				
+				for each(var cm:Object in c.cotacoes){
+					if(cm.material.oid == item.oid){
+						
+						switch (dataField){
+							case "fornecedor.nome":
+								return c.fornecedor.nome;
+								break;
+							case "data":
+								return Utils.formatDat(cm.data);
+								break;
+							case "valor":
+								return Utils.formatDec(cm.valor.toString());
+								break;
+							case "observacao":
+								return cm.observacao;
+								break;
+						}						
+					}
+				}
+				return "";				
+			}
+								
+			private function labelFunctionValor(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDec(row.valor);						
+            	return vFormat;
+			}
+			
+			private function labelFunctionData(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDat(row.data);						
+            	return vFormat;
+			}
+									
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

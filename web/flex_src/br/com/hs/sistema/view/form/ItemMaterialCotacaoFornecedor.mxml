@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="570" title="Nova Cotação " xmlns:component="br.com.hs.sistema.view.component.*" xmlns:control="br.com.thinklab.util.control.*">
+	<mx:Form width="100%">
+		<component:FormItemCustom label="Material:" direction="horizontal" required="true">
+			<component:TextInputCustom styleName="small" id="txtIdMaterial" editable="false" />
+			<component:TextInputCustom styleName="normal" id="txtMaterial" editable="false" />		
+			<mx:Button styleName="btZoom" click="abrirZoomMaterial()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdMaterial, txtMaterial])}"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Valor unitário:" direction="horizontal" required="true">
+			<control:DecimalInput styleName="small" id="txtValorUnitario" maxChars="8" currencyFormat="BR" precision="2"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Observação:" height="50">
+			<component:TextAreaCustom id="txtObservacao"/>		
+		</component:FormItemCustom>
+	</mx:Form>
+	<mx:HBox>
+		<mx:Button id="btSelecionar" styleName="btSelecionar" click="addMaterial()"/>					
+		<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.Fornecedor;
+			import br.com.hs.sistema.view.zoom.ZoomMaterialFornecedor;
+			import br.com.hs.sistema.view.zoom.ZoomMaterial;
+			import br.com.hs.model.entity.CotacaoMaterial;			
+			import mx.controls.Alert;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.rpc.AbstractOperation;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.entity.MaterialCompra;
+			import br.com.hs.model.entity.Material;
+			import br.com.hs.model.remote.ServiceLocator;
+			import flash.sampler.getMemberNames;
+			import br.com.hs.model.entity.Material;	
+			
+			[Bindable]
+			private var material:Material;
+			[Bindable]
+			private var cotacaoMaterial:CotacaoMaterial;
+			private var callbackFunction:Function;
+			private var fn:Fornecedor;
+									
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}	
+			
+			public function set fornecedor(fn:Fornecedor):void{
+				this.fn = fn;
+			}	
+								
+			private function addMaterial():void{
+				if(!Utils.validaCampos([txtMaterial, txtValorUnitario])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}
+				this.cotacaoMaterial = new CotacaoMaterial();
+				this.cotacaoMaterial.data = new Date();					
+				this.cotacaoMaterial.material = this.material;
+				this.cotacaoMaterial.observacao = txtObservacao.text;
+				this.cotacaoMaterial.valor = Utils.parseDec(txtValorUnitario.decimalText);										
+				this.callbackFunction(cotacaoMaterial);
+				this.fechar();
+			}
+			
+			private function abrirZoomMaterial():void{
+				var frm:ZoomMaterialFornecedor = new ZoomMaterialFornecedor();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaMaterial;
+			    frm.dataProvider = this.fn.materiais;			    					
+			}
+			
+			private function selecionaMaterial(m:Material):void{
+				txtIdMaterial.text = m.id;
+				txtMaterial.text = m.nome;
+				this.material = m;
+			}
+						
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

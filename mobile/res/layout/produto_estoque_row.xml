@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="fill_parent"
+	android:layout_height="fill_parent">
+	<TextView android:textSize="16sp" android:layout_width="fill_parent"
+		android:typeface="sans" android:text="Produto:" android:textStyle="bold"
+		android:textColor="#FFFAFA" android:layout_height="wrap_content"
+		android:layout_x="8dp" android:layout_y="5dp" android:id="@+id/lblProdutoEstoqueRow"
+		android:layout_marginLeft="10dip" android:layout_marginRight="10dip"></TextView>
+	<LinearLayout android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:layout_marginLeft="10dip"
+		android:layout_marginRight="10dip">
+		<TextView android:textSize="13sp" android:layout_width="wrap_content"
+			android:textColor="#FFFAFA" android:textStyle="bold"
+			android:layout_height="wrap_content" android:text="Quantidade: "></TextView>
+		<TextView android:textSize="13sp" android:layout_width="wrap_content"
+			android:textColor="#FFFAFA" android:textStyle="bold"
+			android:layout_height="wrap_content" android:id="@+id/lblQtdProdutoEstoqueRow"
+			android:text="0,00"></TextView>
+	</LinearLayout>
+</LinearLayout>

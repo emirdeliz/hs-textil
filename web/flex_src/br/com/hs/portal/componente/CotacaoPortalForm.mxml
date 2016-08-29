@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:component="br.com.hs.sistema.view.component.*" borderStyle="solid">
+	<mx:Label text="MATERIAIS COTAÇÂO" fontWeight="bold" color="#FFFFFF"/>
+	<mx:DataGrid width="100%" id="grid" rowCount="15" height="100%">
+		<mx:columns>
+			<mx:DataGridColumn headerText="Cod." dataField="material.id" width="2"/>
+			<mx:DataGridColumn headerText="Nome" dataField="material.nome" width="6"/>
+			<mx:DataGridColumn headerText="Valor" labelFunction="labelFunctionValor" width="2"/>					
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox verticalAlign="middle" width="100%">
+		<mx:Button id="btAdicionar" styleName="btNovo" click="adicionarItem()"/>					
+		<mx:Button id="btRemover" styleName="btExcluir" click="removerItem()"/>	
+		<mx:Button id="btFinalizar" click="enviarCotacao()" styleName="btSelecionar"/>
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import br.com.hs.portal.form.ItemMaterialCotacaoFornecedor;
+			import br.com.hs.model.entity.Cotacao;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.events.ResultEvent;
+			import br.com.hs.model.remote.ServiceLocator;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.controls.Alert;
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;			
+			import br.com.hs.model.entity.Fornecedor;	
+				
+			
+			private var fn:Fornecedor;
+			
+			public function set fornecedor(fn:Fornecedor):void{
+				this.fn = fn;
+			}
+			
+			private function adicionarItem():void{
+				var frm:ItemMaterialCotacaoFornecedor = new ItemMaterialCotacaoFornecedor();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = atualizaMateriaisCotacao;
+			    frm.fornecedor = this.fn;
+			}
+			
+			private function atualizaMateriaisCotacao(m:Object):void{
+				if(this.grid.dataProvider == null)
+					this.grid.dataProvider = new ArrayCollection;
+				(this.grid.dataProvider as ArrayCollection).addItem(m);
+			}
+			
+			private function removerItem():void{
+				if(this.grid.selectedItem == null){
+					Alert.show("Selecione o item a ser removido");
+				}else{
+					(this.grid.dataProvider as ArrayCollection).removeItemAt(this.grid.selectedIndex);
+				}
+			}
+			
+			private function enviarCotacao():void{
+				if(this.grid.dataProvider == null || (this.grid.dataProvider as ArrayCollection).length <=0)
+					Alert.show("Informe ao menos um item para ser enviado!");
+				else
+					Alert.show("Confirmar envio?", "", Alert.YES|Alert.NO, this, confirmarEnvioCotacao, null, Alert.NO);				
+			}
+			
+			
+			private function confirmarEnvioCotacao(event:CloseEvent):void{
+				if (event.detail == Alert.NO)
+					return;
+					
+				var remoteObject:RemoteObject = ServiceLocator.getCotacaoService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultEnviarCotacao);	
+				
+				var cotacao:Cotacao = new Cotacao();
+				cotacao.fornecedor = this.fn;
+				cotacao.cotacoes = this.grid.dataProvider as ArrayCollection;					
+				remoteObject.salvar(cotacao);				
+			}
+			
+			private function onResultEnviarCotacao(event:ResultEvent):void{
+				Alert.show("Cotação enviada com sucesso!");				
+			}
+			
+			private function labelFunctionValor(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDec(row.valor);						
+            	return vFormat;
+			}
+		]]>
+	</mx:Script>
+</mx:Form>

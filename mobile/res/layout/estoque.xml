@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="fill_parent"
+	android:background="@drawable/background2" android:layout_height="fill_parent">
+	<ScrollView android:layout_height="fill_parent"
+		android:layout_width="fill_parent"
+		android:layout_weight="1">
+		<LinearLayout android:layout_height="fill_parent" android:layout_gravity="top"
+			android:layout_marginLeft="10dip" android:layout_marginRight="10dip"
+			android:layout_width="fill_parent" android:orientation="vertical">
+			<LinearLayout android:layout_height="wrap_content"
+				android:layout_width="fill_parent">
+				<TextView android:text="Estoque" android:layout_height="wrap_content"
+					style="@style/MenuFont" android:typeface="serif" android:textSize="25dip"
+					android:layout_width="wrap_content" android:textStyle="bold|italic"></TextView>
+			</LinearLayout>
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Produto:"
+				android:textColor="#FFFAFA" android:textStyle="bold"></TextView>
+			<EditText android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:id="@+id/txtProdutoEstoque">
+			</EditText>
+			<ListView android:layout_width="fill_parent"
+				android:layout_height="fill_parent" android:id="@+id/listProdutosEstoque"></ListView>
+		</LinearLayout>
+	</ScrollView>
+</LinearLayout>

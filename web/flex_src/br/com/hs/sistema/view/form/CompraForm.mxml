@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="776" xmlns:component="br.com.hs.sistema.view.component.*" 
+	title="Manutenção Compra" xmlns:ns2="br.com.thinklab.util.control.*" showCloseButton="true" close="{this.fechar()}" verticalScrollPolicy="off">
+	<mx:Form width="100%" height="100%">
+		<component:FormItemCustom label="Fornecedor:" direction="horizontal" required="true">	
+			<component:TextInputCustom styleName="small" id="txtIdFornecedor" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtFornecedor" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidFornecedor" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomFornecedor()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdFornecedor, txtFornecedor, txtOidFornecedor]); this.grid.dataProvider = null}"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Data:">
+			<component:TextInputCustom styleName="small" id="txtData" editable="false"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Funcionário:" direction="horizontal">	
+			<component:TextInputCustom styleName="small" id="txtIdFuncionario" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtFuncionario" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidFuncionario" visible="false" includeInLayout="false"/>
+		</component:FormItemCustom>
+		<mx:FormItem label="Valor total:">
+			<ns2:DecimalInput styleName="small" id="txtValorTotal" text="0,00" currencyFormat="BR" precision="2" maxChars="7" editable="false"/>
+		</mx:FormItem>
+		<mx:FormItem label="Data vencimento fatura:" required="true">
+			<mx:DateField id="txtDataVencimento" formatString="DD/MM/YYYY"/>
+		</mx:FormItem>		
+		<component:FormItemCustom label="Observação:" height="50">
+			<component:TextAreaCustom id="txtObservacao"/>		
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Materiais:" width="100%" required="true">
+			<mx:DataGrid width="100%" id="grid" rowCount="4">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Material" dataField="material.nome" width="6"/>
+					<mx:DataGridColumn headerText="Quantidade" dataField="quantidade" width="2"/>	
+					<mx:DataGridColumn headerText="Valor unitário" labelFunction="labelFunctionValorUnitario" width="2"/>			
+					<mx:DataGridColumn headerText="Valor total" labelFunction="labelFunctionValorTotal" width="2"/>							
+				</mx:columns>
+			</mx:DataGrid>
+			<mx:HBox verticalAlign="middle" width="100%">
+				<mx:Button id="btAdicionar" styleName="btNovo" click="adicionarItem()"/>					
+				<mx:Button id="btRemover" styleName="btExcluir" click="removerItem()"/>					
+			</mx:HBox>
+		</component:FormItemCustom>	
+	</mx:Form>
+	<mx:HBox>
+		<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+		<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.Funcionario;
+			import br.com.hs.sistema.view.zoom.ZoomFornecedor;
+			import mx.utils.ObjectUtil;
+			import mx.collections.ArrayCollection;
+			import br.com.hs.model.entity.MaterialCompra;
+			import br.com.hs.model.entity.Compra;
+			import br.com.hs.model.entity.Fornecedor;
+			import br.com.hs.sistema.view.zoom.ZoomTipoDespesa;
+			import br.com.hs.sistema.constant.TipoCaixa;
+			import br.com.hs.model.entity.Caixa;
+			import br.com.hs.model.entity.TipoDespesa;
+			import br.com.hs.model.entity.Despesa;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;			
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;		
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Caixa;
+			
+			private var callbackFunction:Function;
+			
+			private var fornecedor:Fornecedor;
+			
+			public function set entidade(item:Object):void{	
+				this.item = item as Caixa;	
+				if(this.item!=null){
+					this.txtData.text = Utils.formatDat(this.item.dataCaixa);
+					this.txtFornecedor.text = this.item.compra.fornecedor.nome;
+					this.txtFuncionario.text = this.item.compra.funcionario.nome;
+					this.txtIdFornecedor.text = this.item.compra.fornecedor.id;
+					this.txtIdFuncionario.text = this.item.compra.funcionario.id;
+					this.txtOidFornecedor.text = this.item.compra.fornecedor.oid.toString();
+					this.txtOidFuncionario.text = this.item.compra.funcionario.oid.toString();
+					this.grid.dataProvider = this.item.compra.materiais;					
+					this.txtValorTotal.text = Utils.formatDec(this.item.valor.toString());
+					this.txtDataVencimento.selectedDate = this.item.dataVencimento;
+					this.txtObservacao.text = this.item.observacao;
+					this.fornecedor = this.item.compra.fornecedor;
+					this.txtObservacao.text = this.item.observacao;
+				}else{
+					this.txtData.text = Utils.formatDat(new Date());
+					this.txtOidFuncionario.text = this.parentDocument.usuarioCorrente.oid.toString();
+					this.txtFuncionario.text = this.parentDocument.usuarioCorrente.nome;
+					this.txtIdFuncionario.text = this.parentDocument.usuarioCorrente.id;
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+						
+			private function salvar():void{
+				
+				if(!Utils.validaCampos([txtOidFornecedor, txtDataVencimento]) || (grid.dataProvider==null||grid.dataProvider.length<=0)){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}	
+				
+				if(this.item == null){
+					this.item = new Caixa();
+					this.item.compra = new Compra();
+					this.item.compra.materiais = this.grid.dataProvider as ArrayCollection;
+					this.item.compra.fornecedor = new Fornecedor();	
+					this.item.compra.funcionario = new Funcionario();									
+				}
+														
+				this.item.compra.fornecedor.oid = new Number(this.txtOidFornecedor.text);	
+				this.item.compra.funcionario.oid = new Number(this.txtOidFuncionario.text);						
+				this.item.dataVencimento = this.txtDataVencimento.selectedDate;				
+				this.item.valor = Utils.parseDec(this.txtValorTotal.decimalText);					
+				this.item.dataCaixa = new Date();
+				this.item.observacao = this.txtObservacao.text;
+				this.item.tipo = TipoCaixa.DESPESA;								
+				this.item.compra.funcionario.oid = this.parentDocument.usuarioCorrente.oid;		
+				
+				var remoteObject:RemoteObject = ServiceLocator.getCompraService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);						
+				remoteObject.salvar(this.item);
+				
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");				
+				fechar();
+			}
+			
+			private function abrirZoomFornecedor():void{
+				var frm:ZoomFornecedor = new ZoomFornecedor();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaFornecedor;						
+			}
+			
+			private function selecionaFornecedor(f:Fornecedor):void{
+				if(txtOidFornecedor.text!=f.oid.toString()){
+					txtIdFornecedor.text = f.id;
+					txtFornecedor.text = f.nome;
+					txtOidFornecedor.text = f.oid.toString();
+					this.fornecedor = f;
+					this.grid.dataProvider = null;
+				}
+			}
+			
+			private function adicionarItem():void{
+				if(this.txtOidFornecedor.text == ""){
+					Alert.show("Favor, informe o fornecedor referente aos materiais");
+				}else{				
+					var frm:ItemMaterialCompra = new ItemMaterialCompra();
+					PopUpManager.addPopUp(frm, this, true);
+					PopUpManager.centerPopUp(frm);					
+					frm.callback = atualizaMateriais;
+					frm.fornecedor = this.fornecedor;	
+				}					
+			}
+			
+			private function atualizaMateriais(m:MaterialCompra):void{
+				if(this.grid.dataProvider==null)
+					this.grid.dataProvider = new ArrayCollection();	
+								
+				if(this.validaItemAdicionado(m.material)){				
+					(this.grid.dataProvider as ArrayCollection).addItem(m);
+				}
+				this.atualizaValorTotal();
+			}
+			
+			private function validaItemAdicionado(item:Object):Boolean{
+				for each(var o:Object in this.grid.dataProvider){
+					if(item.oid == o.material.oid){
+						Alert.show("Item já foi adicionado a lista, favor selecionar outro item.");
+						return false;
+					}
+				}
+				return true;
+			}
+			
+			private function removerItem():void{
+				if(this.grid.selectedItem == null){
+					Alert.show("Selecione o item a ser removido");
+				}else{
+					(this.grid.dataProvider as ArrayCollection).removeItemAt(this.grid.selectedIndex);
+					atualizaValorTotal();
+				}
+			}
+			
+			private function atualizaValorTotal():void{
+				var vTotal:Number = 0;
+				for each(var m:MaterialCompra in grid.dataProvider){
+					vTotal+=m.valorTotal;
+				}
+				this.txtValorTotal.text = Utils.formatDec(vTotal.toString());
+			}
+						
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+				if(callbackFunction!=null){
+					callbackFunction();
+				}
+			}
+			
+			private function labelFunctionValorUnitario(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDec(row.valorUnitario);						
+            	return vFormat;
+			}	
+			private function labelFunctionValorTotal(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDec(row.valorTotal);						
+            	return vFormat;
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

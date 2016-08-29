@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns1:FieldSet xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" creationComplete="inicio()" 
+	verticalScrollPolicy="off" xmlns:ns1="com.jwopitz.containers.*" title="Visitas agendadas" dropShadowEnabled="true" dropShadowColor="#EAE5E5" shadowDistance="100" shadowDirection="right" fontThickness="100">	
+	<mx:HBox verticalAlign="middle" width="100%">
+		<mx:FormItem label="Pesquisar:" width="100%" direction="horizontal">
+			<mx:TextInput width="100%" id="inputSearch" change="{filtraDados()}"/>			
+		</mx:FormItem>
+		<mx:FormItem label="Data agenda:" direction="horizontal">
+			<mx:DateField id="txtDataI" formatString="DD/MM/YYYY"/>		
+		</mx:FormItem>
+		<mx:FormItem label="à" direction="horizontal">		
+			<mx:DateField id="txtDataF" formatString="DD/MM/YYYY"/>
+			<mx:CheckBox label="Mostrar Inativos" id="cbxMostrarInativos" change="buscarTodosPorData()"/>
+		</mx:FormItem>	
+		<mx:Button click="buscarTodosPorData()" styleName="btFiltrar"/>
+	</mx:HBox>
+	<mx:DataGrid id="grid" width="100%" height="100%" doubleClick="{this.grid.selectedItem!=null? abrirFormManutencao(grid.selectedItem, true): '';}" doubleClickEnabled="true" variableRowHeight="true">
+		<mx:columns>
+			<mx:DataGridColumn headerText="Cliente" dataField="cliente.nome" wordWrap="true" width="4"/>
+			<mx:DataGridColumn headerText="Representante" labelFunction="labelFunctionRepresentante" wordWrap="true" width="4"/>		
+			<mx:DataGridColumn headerText="Data contato" labelFunction="labelFunctionDataContato" wordWrap="true" width="2"/>
+			<mx:DataGridColumn headerText="Data agendada" labelFunction="labelFunctionDataAgendada" wordWrap="true" width="2"/>		
+			<mx:DataGridColumn headerText="Data visita" labelFunction="labelFunctionDataVisita" wordWrap="true" width="2"/>		
+			<mx:DataGridColumn headerText="Cancelada?" labelFunction="labelFunctionDataStatus" wordWrap="true" width="2"/>				
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:HBox width="100%" verticalAlign="middle">
+		<mx:Button styleName="btNovo" click="novo()"/>					
+		<mx:Button styleName="btEdit" click="editar()"/>
+		<mx:Button styleName="btExcluir" click="excluir()"/>		
+	</mx:HBox>		
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ObjectUtil;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.remote.ServiceLocator;			
+			import mx.controls.Alert;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.events.ResultEvent;			
+			import mx.rpc.remoting.mxml.RemoteObject;			
+									
+			private function inicio():void{
+				buscarTodosPorData();					
+			}			
+			
+			private function buscarTodosPorData():void{
+				var remoteObject:RemoteObject = ServiceLocator.getVisitaService();					
+				var operation:AbstractOperation = remoteObject.getOperation("buscarTodosPorData");				
+				operation.addEventListener(ResultEvent.RESULT, onResultBuscarTodosPorData);		
+				remoteObject.buscarTodosPorData(txtDataI.selectedDate, txtDataF.selectedDate, cbxMostrarInativos.selected);				
+			}
+			
+			private function onResultBuscarTodosPorData(event:ResultEvent):void{
+				this.grid.dataProvider = event.result as ArrayCollection;							
+			}
+			
+			private function editar():void{
+				var item:Object = grid.selectedItem;
+				if(item == null){
+					Alert.show("Favor, selecione o item a ser editado");
+				}else{
+					 abrirFormManutencao(item, false);
+				}
+			}
+			
+			private function abrirFormManutencao(item:Object, leitura:Boolean):void{						
+				var frm:VisitaForm = new VisitaForm();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);
+				frm.entidade = item;	
+				frm.callback = buscarTodosPorData;		
+				frm.formLeitura = leitura;					
+			}
+			
+			private function novo():void{
+				abrirFormManutencao(null, false);
+			}
+			
+			private function excluir():void{
+				var item:Object = grid.selectedItem;
+				if(item == null){
+					Alert.show("Favor, selecione o item a ser excluído");
+				}else{
+					Alert.show("Confirmar exclusão?", "", Alert.YES|Alert.NO, this, confirmaExluir, null, Alert.NO);				
+				}				
+			}
+			
+			private function confirmaExluir(event:CloseEvent):void{
+				if (event.detail == Alert.YES){
+					var remoteObject:RemoteObject = ServiceLocator.getVisitaService();				
+					var operation:AbstractOperation = remoteObject.getOperation("deletar");				
+					operation.addEventListener(ResultEvent.RESULT, onResultExcluir);		
+					remoteObject.deletar(this.grid.selectedItem);
+				}
+			}
+			
+			private function onResultExcluir(event:ResultEvent):void{
+				Alert.show("Exclusão efetuada com sucesso.");
+				buscarTodosPorData();
+			}
+						
+			private function filterSearch(item:Object):Boolean {
+				var isMatch:Boolean = false;				
+			
+				if(item.dataAgenda != null && Utils.formatDat(item.dataAgenda).toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1){
+					isMatch = true
+				}	
+				if(item.dataContato != null && Utils.formatDat(item.dataContato).toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1){
+					isMatch = true
+				}		
+				if(item.representante != null && item.representante.nome.toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1){
+					isMatch = true
+				}   
+				if(item.cliente != null && item.cliente.nome.toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1){
+					isMatch = true
+				}            
+				return isMatch;
+			}
+			
+			private function filtraDados():void {
+				if(this.grid.dataProvider==null)
+					return;
+				this.grid.dataProvider.filterFunction = this.filterSearch; 
+				this.grid.dataProvider.refresh();
+			}	
+			
+			private function labelFunctionRepresentante(row:Object, column:DataGridColumn):String{	
+				var vRepresentante:String = row.representante!=null?row.representante.nome:"";
+				return vRepresentante;
+			}
+			
+			private function labelFunctionDataAgendada(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDat(row.dataAgenda);						
+            	return vFormat;
+			}
+			
+			private function labelFunctionDataVisita(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = row.dataVisita!=null? Utils.formatDat(row.dataVisita):"";						
+            	return vFormat;
+			}
+			
+			private function labelFunctionDataContato(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDat(row.dataContato);						
+            	return vFormat;
+			}
+			
+			private function labelFunctionDataStatus(row:Object, column:DataGridColumn):String{			
+				var vInativo:Boolean = row.inativo;						
+            	return vInativo?"Sim":"Não";
+			}			
+		]]>
+	</mx:Script>
+</ns1:FieldSet>

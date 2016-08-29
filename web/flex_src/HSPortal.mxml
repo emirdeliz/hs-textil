@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="horizontal" creationComplete="inicio()"
+	backgroundImage="@Embed(source='test/wallpaper-garden-views-1.jpg')">
+	<mx:Style source="br\com\hs\portal\assets\css\custom.css"/>    
+	<mx:Canvas width="670" height="748" x="546" y="10" backgroundColor="#9CA59A" borderSides="100" dropShadowEnabled="true" dropShadowColor="#845B5B" fontAntiAliasType="advanced">	
+		<mx:backgroundImage>@Embed(source='br/com/hs/portal/assets/img/portal/13448_3_tapete-border-4.jpg')</mx:backgroundImage>
+		<mx:Label text="Endereço: Rua Rua Chico Mendes 53 | Bairro: Itinga | Joinville–SC | Fone: (47) 3465-3435" fontWeight="bold" color="#FFFFFF" x="108" y="711"/>
+		<mx:LinkButton label="PORTFÓLIO" name="br.com.hs.portal.componente.PortfolioForm" click="menuChange(event)" fontSize="14" color="#FFFFFF" y="314" x="10"/>
+		<mx:LinkButton label="HOME" name="br.com.hs.portal.componente.HomeForm" click="menuChange(event)" fontSize="14" color="#FFFFFF" y="271" x="10"/>
+		<mx:Label text="Usuário" color="#FFFFFF" fontWeight="bold" fontSize="12" y="390" x="18"/>
+		<mx:TextInput id="txtUsuario" styleName="normal" width="100" text="agulhas.sul" fontSize="12" y="407" x="18"/>
+		<mx:TextInput id="txtSenha" styleName="normal" displayAsPassword="true" width="100" text="123" fontSize="12" y="452" x="18"/>
+		<mx:Label text="Senha" color="#FFFFFF" fontWeight="bold" fontSize="12" y="434" x="18"/>
+		<mx:HRule strokeColor="#b09f9f" y="304" x="20"/>
+		<mx:HRule strokeColor="#b09f9f" y="346" x="20"/>
+		<mx:Canvas x="142" y="268" width="500" height="418" id="frmMain">
+		</mx:Canvas>
+		<mx:Image x="0" y="0" source="br/com/hs/portal/assets/img/portal/header.png" width="668"/>
+		<mx:Label x="577" y="125" text="HS" fontSize="50" color="#FFFFFF" fontThickness="50" fontWeight="bold" fontStyle="italic"/>
+		<mx:LinkButton label="OK" textDecoration="underline" fontWeight="bold" color="#FFFFFF" click="autenticar()" y="477" x="89"/>
+		<mx:HBox x="20" y="219"  width="621" horizontalAlign="right" verticalAlign="middle">
+			<mx:LinkButton id="lkbSair" label="Sair" click="logout()" fontWeight="bold" color="#F3EDED" visible="false" textDecoration="underline"/>
+			<mx:Label id="usLogado" color="#F3EDED"  fontWeight="bold"/>
+		</mx:HBox>		
+		<mx:HRule x="0" y="209" width="100%"/>
+	</mx:Canvas>
+		
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.Fornecedor;
+			import br.com.hs.portal.componente.CotacaoPortalForm;		
+			import com.adobe.crypto.MD5;
+			import mx.rpc.AbstractOperation;
+			import br.com.hs.model.remote.ServiceLocator;
+			import br.com.hs.portal.componente.HomeForm;
+			import br.com.hs.portal.componente.ContatoForm;
+			import br.com.hs.portal.componente.PortfolioForm;
+			import br.com.hs.portal.componente.ServicosForm;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.rpc.events.ResultEvent;
+			import mx.containers.Canvas;
+			import mx.effects.Fade;
+			import mx.effects.easing.Elastic;
+			import mx.effects.WipeLeft;				
+			import mx.utils.ObjectUtil;
+			import mx.controls.Alert;
+			import mx.events.MenuEvent;
+						
+			private var home:HomeForm;
+			private var servicos:ServicosForm;
+			private var portfolio:PortfolioForm;
+			private var contato:ContatoForm;
+						
+			private function inicio():void{
+				this.frmMain.addChild(new HomeForm());
+			}
+			
+			public function menuChange(event:MouseEvent):void{														
+				var form:Canvas = createInstance(event.currentTarget.name) as Canvas;			
+				this.frmMain.removeAllChildren();		
+				this.frmMain.addChild(form);				
+			}
+			
+			public function createInstance(className:String):Object {
+			    var myClass:Class = getDefinitionByName(className) as Class;
+	        	var instance:Object = new myClass();
+	        	return instance;
+			}
+			
+			public function autenticar():void{						
+				var remoteObject:RemoteObject = ServiceLocator.getUsuarioService();					
+				var operation:AbstractOperation = remoteObject.getOperation("autenticarFornecedor");				
+				operation.addEventListener(ResultEvent.RESULT, onResultAutenticar);		
+				remoteObject.autenticarFornecedor(txtUsuario.text.toLowerCase(), MD5.hash(txtSenha.text.toLowerCase()));			
+			}
+			
+			public function onResultAutenticar(event:ResultEvent):void{
+				var obj:Object = event.result;
+				
+				if(obj!=null){
+					var c:CotacaoPortalForm = new CotacaoPortalForm();
+					c.fornecedor = obj as Fornecedor; 
+					
+					this.frmMain.removeAllChildren();					
+					this.frmMain.addChild(c);
+					this.usLogado.text = "Seja bem vindo " + obj.nome + "!"; 
+					this.lkbSair.visible = true;
+				}else{				
+					Alert.show("Usuário ínvalido");
+				} 		 		
+		 	}	
+		 	
+		 	private function logout():void{
+				var ref:URLRequest = new URLRequest("javascript:location.reload(true)");
+				navigateToURL(ref, "_self");
+				this.usLogado.text = "";
+				this.lkbSair.visible = false;
+			}
+		]]>
+	</mx:Script>	
+	
+</mx:Application>

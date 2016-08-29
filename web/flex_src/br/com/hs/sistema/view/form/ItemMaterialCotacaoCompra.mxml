@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="566" title="Novo Material" xmlns:component="br.com.hs.sistema.view.component.*" xmlns:control="br.com.thinklab.util.control.*" height="306">
+	<mx:Form width="100%">
+		<component:FormItemCustom label="Material:" direction="horizontal">
+			<component:TextInputCustom styleName="small" id="txtIdMaterial" editable="false" text="{this.materialCompra.material.id}"/>
+			<component:TextInputCustom styleName="normal" id="txtMaterial" editable="false" text="{this.materialCompra.material.nome}"/>		
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Quantidade:" direction="horizontal" required="true">
+			<component:TextInputCustom styleName="small" id="txtQuantidade" restrict="0-9" change="calculaValorTotal()" maxChars="7"/>			
+		</component:FormItemCustom>
+		<mx:FormItem label="Data vencimento fatura:" required="true">
+			<mx:DateField id="txtDataVencimento"/>
+		</mx:FormItem>
+		<component:FormItemCustom label="Valor unitário:" direction="horizontal">
+			<control:DecimalInput styleName="small" id="txtValorUnitario" maxChars="8" currencyFormat="BR" precision="2" text="{Utils.formatDec(this.materialCompra.valorUnitario.toString())}" editable="false"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Valor total:" direction="horizontal">
+			<control:DecimalInput styleName="small" id="txtValorTotal"  maxChars="8" currencyFormat="BR" precision="2" text="0,00" editable="false"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Observação:" height="50">
+			<component:TextAreaCustom id="txtObservacao"/>		
+		</component:FormItemCustom>
+	</mx:Form>
+	<mx:HBox>
+		<mx:Button id="btSelecionar" styleName="btSelecionar" click="addMaterial()"/>					
+		<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.CotacaoMaterial;			
+			import br.com.hs.sistema.view.zoom.ZoomMaterialFornecedor;
+			import mx.controls.Alert;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.rpc.AbstractOperation;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.entity.MaterialCompra;
+			import br.com.hs.model.entity.Material;
+			import br.com.hs.model.remote.ServiceLocator;
+			import flash.sampler.getMemberNames;
+			import br.com.hs.model.entity.Fornecedor;	
+			
+			[Bindable]
+			private var cm:CotacaoMaterial;
+			[Bindable]
+			private var materialCompra:MaterialCompra;
+			private var callbackFunction:Function;
+			
+			public function set cotacao(cm:CotacaoMaterial):void{
+				this.cm = cm;
+			}
+			
+			public function set materialCompraCotacao(materialCompra:MaterialCompra):void{
+				this.materialCompra = materialCompra;
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}		
+								
+			private function addMaterial():void{
+				if(!Utils.validaCampos([txtMaterial, txtQuantidade, txtDataVencimento])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}
+				
+				var qtd:Number = Number(Utils.parseDec(txtQuantidade.text));										
+				this.materialCompra.material.qtdEstoque = this.materialCompra.material.qtdEstoque + qtd;					
+				this.materialCompra.quantidade = new Number(this.txtQuantidade.text);				
+				this.materialCompra.valorTotal = Utils.parseDec(this.txtValorTotal.decimalText);
+				
+				var o:Object = new Object();
+				o.dataVencimentoFatura = txtDataVencimento.selectedDate;
+				o.observacao = txtObservacao.text;
+				o.materialCompra = this.materialCompra;		
+				o.valorTotal = Utils.parseDec(this.txtValorTotal.decimalText);					
+				callbackFunction(o);
+				this.fechar();
+			}
+			
+			private function calculaValorTotal():void{
+				this.txtValorTotal.text = Utils.formatDec((Number(txtQuantidade.text) * Number(Utils.parseDec(txtValorUnitario.decimalText))).toString());
+			}
+			
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

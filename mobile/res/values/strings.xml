@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="hello">Hello World, HSMobileActivity!</string>
+    <string name="app_name">HSMobile</string>
+    <string name="soap_action">http://ws.sistema.hs.com.br/</string>
+    <string name="url">http://hstextil.no-ip.biz:9191/HSSistema/services?wsdl
+</string>
+    <string name="name_space">http://ws.sistema.hs.com.br/</string>
+</resources>

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ns1:FieldSet xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" xmlns:ns1="com.jwopitz.containers.*" title="Relatório Vendas" 
+	 verticalScrollPolicy="off" dropShadowEnabled="true" dropShadowColor="#EAE5E5" shadowDistance="100" shadowDirection="right" fontThickness="100" xmlns:component="br.com.hs.sistema.view.component.*">
+	<mx:Form width="100%">
+		<component:FormItemCustom label="Cliente:" direction="horizontal">	
+			<component:TextInputCustom styleName="small" id="txtIdCliente" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtCliente" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidCliente" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomCliente()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdCliente, txtCliente, txtOidCliente]);}"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Representante:" direction="horizontal">	
+			<component:TextInputCustom styleName="small" id="txtIdRepresentante" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtRepresentante" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidRepresentante" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomRepresentante()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdRepresentante, txtRepresentante, txtOidRepresentante]);}"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Forma Pagamento:" direction="horizontal">	
+			<component:TextInputCustom styleName="small" id="txtIdFormaPagamento" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtFormaPagamento" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidFormaPagamento" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomFormaPagamento()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdFormaPagamento, txtFormaPagamento, txtOidFormaPagamento]);}"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Produto:" direction="horizontal">	
+			<component:TextInputCustom styleName="small" id="txtIdProduto" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtProduto" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidProduto" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomProduto()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdProduto, txtProduto, txtOidProduto]);}"/>
+		</component:FormItemCustom>
+		<mx:HBox verticalAlign="middle" width="100%">			
+			<mx:FormItem label="    Data realização:" direction="horizontal">
+				<mx:DateField id="txtDataI" formatString="DD/MM/YYYY"/>		
+			</mx:FormItem>
+			<mx:FormItem label="à" direction="horizontal">		
+				<mx:DateField id="txtDataF" formatString="DD/MM/YYYY"/>
+			</mx:FormItem>	
+			<mx:Button click="geraRelatorio()" styleName="btFiltrar"/>		
+		</mx:HBox>			
+	</mx:Form>
+	<mx:HBox horizontalAlign="center" width="100%">
+		<mx:Label text="Número vendas: 0 " fontWeight="bold" id="lblNumeroVendas" fontSize="18" textDecoration="underline"/>
+		<mx:Label text="Valor total: 0,00" fontWeight="bold" fontSize="18" id="lblValorTotal" textDecoration="underline"/>
+		<mx:Label text="Ganho médio: 0,00" fontWeight="bold" fontSize="18" id="lblGanhoMedio" textDecoration="underline"/>
+	</mx:HBox>
+	<mx:FormItem label="Pesquisar:" width="100%" direction="horizontal">		
+		<mx:TextInput id="inputSearch" width="100%" change="{filtraDados()}"/>		
+	</mx:FormItem>
+	<mx:DataGrid id="grid" width="100%" height="100%" doubleClick="{this.grid.selectedItem!=null? abrirFormManutencao(grid.selectedItem, true): '';}" doubleClickEnabled="true" rowCount="10" variableRowHeight="true">
+		<mx:columns>
+			<mx:DataGridColumn headerText="Data" labelFunction="labelFunctionData" wordWrap="true" width="2"/>
+			<mx:DataGridColumn headerText="Cliente" dataField="venda.cliente.nome" wordWrap="true" width="6"/>		
+			<mx:DataGridColumn headerText="Valor" labelFunction="labelFunctionValor" wordWrap="true" width="2"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.Caixa;
+			import br.com.hs.sistema.view.zoom.ZoomProduto;
+			import br.com.hs.sistema.view.zoom.ZoomRepresentante;
+			import br.com.hs.sistema.view.zoom.ZoomCliente;
+			import br.com.hs.sistema.view.zoom.ZoomFormaPagamento;
+			import br.com.hs.model.entity.Representante;
+			import br.com.hs.model.entity.FormaPagamento;
+			import br.com.hs.model.entity.Cliente;
+			import br.com.hs.model.entity.ProdutoVenda;
+			import br.com.hs.model.entity.Produto;
+			import mx.controls.Alert;
+			import mx.utils.ObjectUtil;
+			import br.com.hs.model.entity.MaterialCompra;
+			import br.com.hs.model.entity.Material;			
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.events.CloseEvent;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.remote.ServiceLocator;				
+			import mx.collections.ArrayCollection;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.events.ResultEvent;			
+			import mx.rpc.remoting.mxml.RemoteObject;			
+							
+			private function geraRelatorio():void{
+				var remoteObject:RemoteObject = ServiceLocator.getVendaService();					
+				var operation:AbstractOperation = remoteObject.getOperation("geraRelatorio");				
+				operation.addEventListener(ResultEvent.RESULT, onResultBuscarTodos);
+				
+				var cliente:Cliente = null;
+				var representante:Representante = null;
+				var formaPagamento:FormaPagamento = null;
+				var produto:Produto = null;
+				
+				if(txtOidCliente.text!=''){
+					cliente = new Cliente();
+					cliente.oid = new Number(txtOidCliente.text);
+				}
+				if(txtOidRepresentante.text!=''){
+					representante = new Representante();
+					representante.oid = new Number(txtOidRepresentante.text);
+				}
+				if(txtOidFormaPagamento.text!=''){
+					formaPagamento = new FormaPagamento();
+					formaPagamento.oid = new Number(txtOidFormaPagamento.text);
+				}
+				if(txtOidProduto.text!=''){
+					produto = new Produto();
+					produto.oid = new Number(txtOidProduto.text);
+				}						
+				remoteObject.geraRelatorio(cliente, representante, formaPagamento, produto, txtDataI.selectedDate, txtDataF.selectedDate);				
+			}
+			
+			private function onResultBuscarTodos(event:ResultEvent):void{
+				this.grid.dataProvider = event.result as ArrayCollection;			
+				this.atualizaDadosInformativos();								
+			}
+						
+			private function abrirFormManutencao(item:Object, leitura:Boolean):void{						
+				var frm:VendaForm = new VendaForm();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);
+				frm.entidade = item;					
+				frm.formLeitura = leitura;		
+				frm.callback = null;					
+			}			
+			
+			private function filterSearch(item:Object):Boolean {
+				var isMatch:Boolean = false;				
+			
+				if(item.venda.cliente.nome != null && item.venda.cliente.nome.toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1){
+					isMatch = true
+				}			
+				if(item.dataCaixa != null && Utils.formatDat(item.dataCaixa).toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1){
+					isMatch = true
+				}    
+				if(item.valor != null && item.valor.toString().toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1 ||
+					Utils.formatDec(item.valor.toString()).toLowerCase().search(this.inputSearch.text.toLowerCase()) != -1){
+					isMatch = true
+				}                     
+				return isMatch;
+			}
+			
+			private function filtraDados():void {
+				if(this.grid.dataProvider==null)
+					return;				
+				this.grid.dataProvider.filterFunction = this.filterSearch; 
+				this.grid.dataProvider.refresh();
+				this.atualizaDadosInformativos();
+			}
+			
+			private function labelFunctionData(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDat(row.dataCaixa);						
+            	return vFormat;
+			}	
+			
+			private function labelFunctionValor(row:Object, column:DataGridColumn):String{			
+				var vFormat:String = Utils.formatDec(row.valor);						
+            	return vFormat;
+			}
+						
+			private function abrirZoomCliente():void{
+				var frm:ZoomCliente = new ZoomCliente();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaCliente;						
+			}
+			
+			private function selecionaCliente(c:Cliente):void{
+				txtIdCliente.text = c.id;
+				txtCliente.text = c.nome;
+				txtOidCliente.text = c.oid.toString();				
+			}
+			
+			private function abrirZoomFormaPagamento():void{
+				var frm:ZoomFormaPagamento = new ZoomFormaPagamento();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaFormaPagamento;						
+			}
+			
+			private function selecionaFormaPagamento(f:FormaPagamento):void{
+				txtIdFormaPagamento.text = f.id;
+				txtFormaPagamento.text = f.nome;
+				txtOidFormaPagamento.text = f.oid.toString();			
+			}	
+			
+			private function abrirZoomRepresentante():void{
+				var frm:ZoomRepresentante = new ZoomRepresentante();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaRepresentante;						
+			}
+			
+			private function selecionaRepresentante(r:Representante):void{
+				txtIdRepresentante.text = r.id;
+				txtRepresentante.text = r.nome;
+				txtOidRepresentante.text = r.oid.toString();			
+			}	
+			
+			private function abrirZoomProduto():void{
+				var frm:ZoomProduto = new ZoomProduto();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaProduto;						
+			}
+			
+			private function selecionaProduto(p:Produto):void{
+				txtIdProduto.text = p.id;
+				txtProduto.text = p.nome;
+				txtOidProduto.text = p.oid.toString();			
+			}	
+			
+			private function atualizaDadosInformativos():void{
+				if(this.grid.dataProvider==null){
+					this.lblNumeroVendas.text = 'Número de vendas: 0';
+					this.lblValorTotal.text = 'Valor total: 0,00';
+					this.lblGanhoMedio.text = 'Ganho médio: 0,00';
+					return;
+				}				
+					
+				var vlTotal:Number = 0;
+				var nrItens:Number = this.grid.dataProvider.length;
+				
+				for each(var c:Caixa in this.grid.dataProvider){
+					vlTotal += c.valor;
+				}
+				
+				var ganhoMedio:Number = vlTotal/nrItens;			
+				
+				this.lblNumeroVendas.text = 'Número de vendas: ' + nrItens;
+				this.lblValorTotal.text = 'Valor total: ' + Utils.formatDec(String(vlTotal));
+				this.lblGanhoMedio.text = 'Ganho médio: ' + (isNaN(ganhoMedio)?'0,00':Utils.formatDec(String(ganhoMedio)));
+				
+			}			
+		]]>
+	</mx:Script>
+</ns1:FieldSet>

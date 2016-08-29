@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence>
+	<!--Nome do contexto que configura o Provedor de Persistência -->
+	<persistence-unit name="hsContext">
+	
+		<!--Provedor de Persistência Utilizado-->
+		<provider>org.hibernate.ejb.HibernatePersistence</provider>
+		
+		<!--Lista Classes a serem persistidas-->
+		<class>br.com.hs.model.entity.Atendimento</class>
+		<class>br.com.hs.model.entity.Caixa</class>
+		<class>br.com.hs.model.entity.Cargo</class>
+		<class>br.com.hs.model.entity.Cliente</class>
+		<class>br.com.hs.model.entity.Compra</class>
+		<class>br.com.hs.model.entity.Cotacao</class>
+		<class>br.com.hs.model.entity.Estoque</class>
+		<class>br.com.hs.model.entity.FormaPagamento</class>
+		<class>br.com.hs.model.entity.Fornecedor</class>
+		<class>br.com.hs.model.entity.Funcionario</class>
+		<class>br.com.hs.model.entity.Material</class> 
+		<class>br.com.hs.model.entity.Orcamento</class>
+		<class>br.com.hs.model.entity.Produto</class> 
+		<class>br.com.hs.model.entity.Venda</class>
+		<class>br.com.hs.model.entity.Material</class> 
+		<class>br.com.hs.model.entity.Visita</class>
+		<properties>
+            <!--String Conexao com o banco de dados-->
+            <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/hstextil</property>
+            
+            <!--Dialeto entendido pelo banco-->
+            <property name="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</property>
+            
+            <!--Driver JDBC para acesso ao banco-->
+            <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+            
+            <property name="hibernate.connection.username">root</property>
+            <property name="hibernate.connection.password">root</property>
+            
+            <!--Metodo de atualizacao-->
+            <property name="hibernate.hbm2ddl.auto">update</property>  
+            <property name="hibernate.show_sql" value="true"/>             
+    </properties>
+	</persistence-unit>
+</persistence>

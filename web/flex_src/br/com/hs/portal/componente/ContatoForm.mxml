@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%">
+	<mx:Canvas width="100%">
+		<mx:Label text="CONTATO" fontWeight="bold" fontSize="23" x="10" y="58" color="#AA8080"/>
+		<mx:HRule width="100%" x="10" y="90"/>
+	</mx:Canvas>
+	<mx:Form width="100%" height="100%" x="10" y="100" fontSize="12">				
+		<mx:FormItem label="Nome:">
+			<mx:TextInput width="223"/>
+		</mx:FormItem>
+		<mx:FormItem label="E-mail:">
+			<mx:TextInput width="223"/>
+		</mx:FormItem>
+		<mx:FormItem label="Descrição: ">
+			<mx:TextArea height="73" width="223"/>
+		</mx:FormItem>	
+	</mx:Form>	
+</mx:Canvas>

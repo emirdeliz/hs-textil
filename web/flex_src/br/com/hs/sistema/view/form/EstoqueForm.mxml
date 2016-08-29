@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:component="br.com.hs.sistema.view.component.*" 
+	width="540" title="Manutenção Estoque" styleName="formMain" showCloseButton="true" close="{this.fechar()}" xmlns:control="br.com.thinklab.util.control.*">	
+	<mx:Form width="100%" height="100%">				
+		<component:FormItemCustom label="{(this.item is Produto?'Produto':'Material') + ':'}" direction="horizontal" required="true">
+			<component:TextInputCustom styleName="small" id="txtIdItem" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtItem" editable="false"/>						
+		</component:FormItemCustom>
+		<component:FormItemCustom label="{this.item.unidade.nome + ':'}" required="true" direction="horizontal">
+			<control:DecimalInput styleName="small" id="txtQtdEstoque" text="0,00" currencyFormat="BR" precision="2" maxChars="8" change="validaEstoqueMaterial()"/>
+			<mx:Image source="br/com/hs/sistema/view/assets/img/icones/atencao.gif" visible="false" id="atencao"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Materiais:" visible="{this.item is Produto}" includeInLayout="{this.item is Produto}">		
+			<mx:DataGrid width="100%" id="grid" rowCount="4">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Cod." dataField="material.id" width="2"/>
+					<mx:DataGridColumn headerText="Nome" dataField="material.nome" width="6"/>	
+					<mx:DataGridColumn headerText="Quantidade" dataField="quantidade" width="6"/>				
+				</mx:columns>
+			</mx:DataGrid>
+		</component:FormItemCustom>
+		<mx:HBox>
+			<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>	
+			<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+		</mx:HBox>
+	</mx:Form>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import br.com.hs.model.entity.MaterialProduto;
+			import br.com.hs.sistema.view.zoom.ZoomMaterial;
+			import br.com.hs.sistema.view.zoom.ZoomProduto;
+			import mx.core.IFlexDisplayObject;
+			import mx.utils.ObjectUtil;
+			import flash.net.getClassByAlias;
+			import br.com.hs.model.entity.Produto;
+			import br.com.hs.model.entity.Material;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.entity.Cargo;
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import br.com.hs.model.entity.Atendimento;			
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Object;			
+			
+			private var callbackFunction:Function;
+			
+			private var m:MaterialProduto;
+		
+			public function set entidade(item:Object):void{	
+				this.item = item as (item is Material? Material:Produto);	
+				if(this.item!=null){					
+					this.txtIdItem.text = this.item.id;
+					this.txtItem.text = this.item.nome;					
+					this.txtQtdEstoque.text = this.item.qtdEstoque;					
+					this.grid.dataProvider = (this.item is Produto? this.item.materiais:null);
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+					
+			private function salvar():void{
+				if(!Utils.validaCampos([txtQtdEstoque])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}	
+				
+				if(this.atencao.visible){
+					Alert.show("A quantidade de material para o produto informado é inferior a quantidade do estoque. Deseja continuar?", "", Alert.YES|Alert.NO, this, confirmSalvar, null, Alert.NO);
+				}else{
+					confirmSalvar(null);
+				}
+			}
+					
+			private function confirmSalvar(event:CloseEvent):void{
+				if(event == null || event.detail == Alert.YES){	
+					if(this.item is Produto){									
+						var vlEstoque:Number = Utils.parseDec(this.txtQtdEstoque.decimalText) - this.item.qtdEstoque;			
+										
+						if(vlEstoque > 0){				
+							for each(var m:MaterialProduto in this.item.materiais){					
+								m.material.qtdEstoque = m.material.qtdEstoque - (vlEstoque * m.quantidade);		
+								if(m.material.qtdEstoque <= m.material.qtdMinimaEstoque){
+									enviaEmailFornecedor(m.material);
+								}				
+							}										
+						}
+					}					
+				
+					this.item.qtdEstoque = Utils.parseDec(this.txtQtdEstoque.decimalText);									
+					var remoteObject:RemoteObject =  (item is Material?ServiceLocator.getMaterialService():ServiceLocator.getProdutoService());	
+					var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+					operation.addEventListener(ResultEvent.RESULT, onResultSalvar);		
+					remoteObject.salvar(this.item);
+				}
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");
+				callbackFunction();
+				fechar();
+			}
+			
+			private function enviaEmailFornecedor(m:Material):void{
+				var remoteObject:RemoteObject =  ServiceLocator.getEmailService();
+				var operation:AbstractOperation = remoteObject.getOperation("enviaEmailFornecedor");				
+				operation.addEventListener(ResultEvent.RESULT, onResultEnviaEmailFornecedor);		
+				remoteObject.enviaEmailFornecedor(m);
+			}
+			
+			private function onResultEnviaEmailFornecedor(event:ResultEvent):void{
+				trace('Email enviado com sucesso...');
+			}
+					
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+						
+			private function validaEstoqueMaterial():void{	
+				var atencao:Boolean = false;
+				if(this.item is Material )
+					return;
+				
+				var vlEstoque:Number = Utils.parseDec(this.txtQtdEstoque.decimalText) - this.item.qtdEstoque;		
+				
+				if(vlEstoque > this.item.qtdEstoque){				
+					for each(var m:MaterialProduto in this.item.materiais){					
+						var vlRestante:Number = m.material.qtdEstoque - (vlEstoque * m.quantidade);
+						atencao = vlRestante < 0;							
+					}										
+				}	
+				this.atencao.visible = atencao;					
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

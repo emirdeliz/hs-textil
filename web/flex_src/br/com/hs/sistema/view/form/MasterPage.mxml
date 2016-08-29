@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="inicio()" xmlns:menu="br.com.hs.view.component.menu.*" 
+	width="1000" height="684" cornerRadius="3" verticalScrollPolicy="off" backgroundImage="@Embed(source='../assets/img/siteBackground.jpg')" borderStyle="solid" borderThickness="2"> 	    
+    <mx:HBox width="100%" height="109" horizontalAlign="left" x="0">
+		<mx:Image source="@Embed('br/com/hs/sistema/view/assets/img/HSTextil.png')"/>
+		<mx:HBox horizontalAlign="right" verticalAlign="bottom" width="100%" height="100%">
+			<mx:Label text="Endereço: Rua Rua Chico Mendes 53 | Bairro: Itinga | Joinville–SC  " fontWeight="bold"/>
+		</mx:HBox>
+	</mx:HBox>
+	<mx:Form width="100%" height="100%" y="174" horizontalCenter="0">
+		<mx:HBox width="100%" id="frmMain" cornerRadius="10" borderStyle="none" height="100%" borderThickness="3" shadowDirection="right" shadowDistance="50" dropShadowColor="#A9A5A5" dropShadowEnabled="true" backgroundImage="@Embed(source='../assets/img/background-main.png')"></mx:HBox>			
+	</mx:Form>	
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.model.entity.AcessoSistema;
+			import br.com.hs.sistema.view.utils.MenuUtils;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.collections.XMLListCollection;
+			import br.com.hs.sistema.view.form.CotacaoFormView;
+			import br.com.hs.sistema.view.form.OrcamentoFormView;
+			import br.com.hs.sistema.view.form.VisitaFormView;
+			import br.com.hs.sistema.view.form.RepresentanteFormView;
+			import br.com.hs.sistema.view.form.EstoqueFormView;
+			import br.com.hs.sistema.view.form.UnidadeMedidaFormView;
+			import br.com.hs.model.entity.UnidadeMedida;
+			import br.com.hs.sistema.view.form.VendaFormView;
+			import br.com.hs.sistema.view.form.CompraFormView;
+			import br.com.hs.sistema.view.form.AtendimentoFormView;
+			import br.com.hs.sistema.view.form.DespesaFormView;
+			import br.com.hs.sistema.view.form.TipoDespesaFormView;
+			import br.com.hs.sistema.view.form.CaixaFormView;
+			import mx.containers.Form;
+			import mx.controls.Alert;
+			import mx.events.MenuEvent;
+			import br.com.hs.sistema.view.form.VendaForm;
+      		import br.com.hs.sistema.view.form.ProdutoFormView;
+      		import br.com.hs.sistema.view.form.OrcamentoForm;
+      		import br.com.hs.sistema.view.form.MaterialFormView;
+      		import br.com.hs.sistema.view.form.FuncionarioFormView;
+      		import br.com.hs.sistema.view.form.FornecedorFormView;
+      		import br.com.hs.sistema.view.form.AcessoSistemaFormView;
+      		import br.com.hs.sistema.view.form.FormaPagamentoFormView;
+      		import br.com.hs.sistema.view.form.CotacaoForm;
+      		import br.com.hs.sistema.view.form.ClienteFormView;
+      		import br.com.hs.sistema.view.form.CargoFormView;
+      		import br.com.hs.sistema.view.form.LoginForm;
+      		import br.com.hs.sistema.view.form.AtendimentoForm;
+      		
+      		var produtoForm:ProdutoFormView;			
+			var materialForm:MaterialFormView;
+			var funcionarioForm:FuncionarioFormView;
+			var fornecedorForm:FornecedorFormView;
+			var tipoAcessoForm:AcessoSistemaFormView;
+			var formaPagamentoFormView:FormaPagamentoFormView;			
+			var tipoDespesasForm:TipoDespesaFormView;			
+			var clienteForm:ClienteFormView;
+			var cargoForm:CargoFormView;			
+			var atendimentoForm:AtendimentoFormView;
+			var caixaForm:CaixaFormView;
+			var despesaForm:DespesaFormView;
+			var compraForm:CompraFormView;
+			var vendaForm:VendaFormView;
+			var unidadeForm:UnidadeMedidaFormView;
+			var estoqueForm:EstoqueFormView;
+			var representanteForm:RepresentanteFormView;
+			var visitaForm:VisitaFormView;
+			var orcamentoForm:OrcamentoFormView;
+			var cotacaoForm:CotacaoFormView;
+			var cotacaoPromocao:PromocaoFormView;	
+			var relatorioVendas:RelatorioVendaForm;
+			var relatorioCompra:RelatorioCompraForm;	
+			var relatorioProduto:RelatorioProdutoForm;
+			var relatorioDespesa:RelatorioDespesaForm;
+			
+			private function inicio():void{
+				var msg:String = "Você não possui quaisquer permissões de acesso ao sistema, favor informe ao administrador!" 
+				var a:AcessoSistema = this.parentDocument.usuarioCorrente.acessoSistema;
+				
+				if(a==null || a.permissoes.length<=0){
+					Alert.show(msg);
+					return;
+				}			
+				
+				var pInicio:Boolean = a.permissoes.getItemAt(0).permitido;
+				var pManutencao:Boolean = a.permissoes.getItemAt(1).permitido;
+				var pFinanceiro:Boolean = a.permissoes.getItemAt(2).permitido;
+				var pRelatorio:Boolean = a.permissoes.getItemAt(3).permitido;
+								
+				if(!pInicio && !pManutencao && !pFinanceiro && !pRelatorio){
+					Alert.show(msg);
+					return;				
+				}
+				
+				this.menu.dataProvider = MenuUtils.menu(pInicio, pManutencao, pFinanceiro, pRelatorio);
+			}
+				      		      		
+			private function menuChange(event:MenuEvent):void{			
+				var form:DisplayObject = createInstance(event.item.@data) as DisplayObject;	
+				this.frmMain.removeAllChildren();		
+				this.frmMain.addChild(form);			
+			}
+			
+			private function createInstance(className:String):Object {
+			    var myClass:Class = getDefinitionByName(className) as Class;
+	        	var instance:Object = new myClass();
+	        	return instance;
+			}
+			
+			private function logout():void{
+				var ref:URLRequest = new URLRequest("javascript:location.reload(true)");
+				navigateToURL(ref, "_self");
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%" y="141" verticalAlign="middle" horizontalAlign="right" x="0">
+		<mx:Label id="usLogado" fontWeight="bold" text="{'Seja bem vindo '+this.parentDocument.usuarioCorrente.nome+'!'}"/>
+		<mx:LinkButton label="Sair" click="logout()" fontWeight="bold" color="#2D2B2B"/>
+	</mx:HBox>	
+	<mx:MenuBar id="menu" width="100%" labelField="@label" itemClick="menuChange(event)" y="109" backgroundColor="#C5C6BC" height="24" fontSize="12"/>	
+</mx:Canvas>

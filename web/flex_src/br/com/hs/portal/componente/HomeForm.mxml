@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="95%" height="95%">
+	<mx:Label x="10" y="57.15" text="QUEM SOMOS" fontWeight="bold" fontSize="23" color="#FFFFFF"/>
+	<mx:Text width="454" fontSize="10" color="#FFFFFF" text="A HS Têxtil foi fundada em 1995 pelo Sr. Ireno Souza,  é uma das mais importantes entidades dentre os setores econômicos têxteis do País. O Setor Têxtil e de Confecção Brasileiro tem destaque no cenário mundial, não apenas por seu profissionalismo, criatividade e tecnologia, mas também pelas dimensões de seu parque têxtil: é a sexta maior indústria têxtil do mundo, o segundo maior produtor de denim e o terceiro na produção de malhas. Auto-suficiente na produção de algodão, o Brasil produz 9,8 bilhões de peças confeccionadas ao ano (destas, cerca de 5,5 bilhões em peças de vestuário), sendo referência mundial em beachwear, jeanswear e homewear. Outros segmentos também vêm ganhando mercado internacional como a nossa moda feminina, masculina, infantil, além do fitness e moda íntima." height="269.85" y="99.15"/>
+	<mx:HRule x="0.05" y="89.15" width="100%"/>
+</mx:Canvas>

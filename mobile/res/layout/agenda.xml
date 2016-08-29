@@ -1,0 +1,72 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:background="@drawable/background2"
+	android:layout_width="wrap_content" android:layout_height="wrap_content">
+	<LinearLayout android:orientation="vertical"
+		android:layout_width="fill_parent" android:layout_height="fill_parent">
+		<TextView android:text="Agenda" style="@style/MenuFont"
+			android:textStyle="bold|italic" android:textSize="25dip"
+			android:typeface="serif" android:layout_width="fill_parent"
+			android:layout_weight="1" android:layout_height="fill_parent"
+			android:layout_marginRight="10dip"></TextView>
+	</LinearLayout>
+	<ScrollView android:layout_height="fill_parent"
+		android:layout_width="fill_parent">
+		<LinearLayout android:layout_height="fill_parent"
+			android:layout_gravity="top" android:layout_marginLeft="10dip"
+			android:layout_marginRight="10dip" android:layout_width="fill_parent"
+			android:orientation="vertical">
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Cliente:"
+				android:layout_weight="1" android:textColor="#FFFAFA"
+				android:textStyle="bold" android:typeface="sans"></TextView>
+			<LinearLayout android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:layout_weight="1">
+				<AutoCompleteTextView android:layout_height="wrap_content"
+					android:id="@+id/txtNomeClienteAgenda" android:layout_width="fill_parent">
+				</AutoCompleteTextView>
+			</LinearLayout>
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Data agenda:"
+				android:layout_weight="1" android:textColor="#FFFAFA"
+				android:textStyle="bold"></TextView>
+			<DatePicker android:layout_height="wrap_content"
+				android:layout_width="fill_parent" android:id="@+id/dtVisita"
+				android:layout_weight="1"></DatePicker>
+			<Button android:layout_height="wrap_content" android:id="@+id/btConsultaAgenda"
+				android:layout_width="fill_parent" android:layout_weight="1"
+				android:text="CONSULTAR" android:typeface="serif"
+				android:shadowRadius="100" android:textStyle="bold"
+				android:textColor="#2F4F4F"></Button>
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Status:"
+				android:layout_weight="1" android:textColor="#FFFAFA"
+				android:textStyle="bold"></TextView>
+			<RadioGroup android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:orientation="horizontal"
+				android:id="@+id/rdbStatus">
+				<RadioButton android:text="Ativa" android:checked="true"
+					android:id="@+id/rdbStatusAtivo" android:layout_width="wrap_content"
+					android:layout_height="wrap_content" android:layout_weight="1"
+					android:layout_gravity="right"></RadioButton>
+				<RadioButton android:text="Cancelada" android:id="@+id/rdbStatusCancelada"
+					android:layout_width="wrap_content" android:layout_height="wrap_content"
+					android:layout_weight="1"></RadioButton>
+			</RadioGroup>
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Visitas:"
+				android:id="@+id/lblVisita_observacao" android:layout_weight="1"
+				android:textColor="#FFFAFA" android:textStyle="bold"></TextView>
+			<EditText android:inputType="textMultiLine"
+				android:layout_width="fill_parent" android:id="@+id/txtObservacaoAgenda"
+				android:layout_height="150dip" android:visibility="gone"
+				android:layout_weight="1">
+			</EditText>
+
+			<ListView android:layout_width="fill_parent"
+				android:layout_height="fill_parent" android:id="@+id/lvVisitas"
+				android:layout_weight="1"></ListView>
+		</LinearLayout>
+	</ScrollView>
+</LinearLayout>
+
+

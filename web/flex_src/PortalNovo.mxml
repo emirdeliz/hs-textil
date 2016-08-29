@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="100%" height="100%"  
+	backgroundColor="#000000" >
+
+
+
+	<mx:Box width="100%" height="100%" verticalAlign="middle" horizontalAlign="center">
+
+		<mx:Canvas width="1215" height="671">
+
+			<mx:Box width="100%" height="100%" top="77" bottom="35" left="95" right="70" styleName="BackgroundColor"/>		
+
+							
+
+							
+
+							
+
+			<mx:Canvas width="100%" height="100%" styleName="BackgroundImage">
+
+				<mx:LinkBar x="208" y="81" dataProvider="{page}" />				
+								
+
+				<mx:Label x="173" y="10" text="HS Têxtil" fontSize="70" fontThickness="50"/>
+				<mx:Panel width="307" height="157" title="Fornecedores" rotation="-1" x="826" y="128">
+					
+					<mx:FormItem label="User Name:" width="100%" labelWidth="130">
+						
+						<mx:TextInput width="100%"/>
+					
+					</mx:FormItem>
+					
+					<mx:FormItem label="Password:" width="100%" labelWidth="130">
+						
+						<mx:TextInput width="100%"/>
+					
+					</mx:FormItem>
+					
+					
+					
+					<mx:FormItem label="" width="100%" labelWidth="130">
+						
+						<mx:HBox>
+							
+							<mx:Button label="Login" toolTip="Login"/>
+							
+							<mx:Button label="Sign up" toolTip="Sign up into the system "/>
+						
+						</mx:HBox>
+					
+					</mx:FormItem>		
+				
+				
+				
+				</mx:Panel>
+				<mx:ViewStack id="page" width="620.5" height="448" borderStyle="solid" borderColor="#787878" borderThickness=".5" rotation="1" x="149" y="122">
+				
+				<mx:Panel width="100%" height="65%" title="Feedback" label="Sobre nós" rotation="1">
+						
+						<mx:TextArea width="100%" height="100%">
+						
+						<mx:text>
+						
+							A HS Têxtil foi fundada em 1995 pelo Sr. Ireno Souza,  é uma das mais importantes entidades dentre os setores econômicos têxteis do País. O Setor Têxtil e de Confecção Brasileiro tem destaque no cenário mundial, não apenas por seu profissionalismo, criatividade e tecnologia, mas também pelas dimensões de seu parque têxtil: é a sexta maior indústria têxtil do mundo, o segundo maior produtor de denim e o terceiro na produção de malhas. Auto-suficiente na produção de algodão, o Brasil produz 9,8 bilhões de peças confeccionadas ao ano (destas, cerca de 5,5 bilhões em peças de vestuário), sendo referência mundial em beachwear, jeanswear e homewear. Outros segmentos também vêm ganhando mercado internacional como a nossa moda feminina, masculina, infantil, além do fitness e moda íntima.
+						</mx:text>
+						
+						</mx:TextArea>
+				
+				</mx:Panel>
+				
+				
+				
+				<mx:Panel width="100%" height="65%" title="Produtos" label="Produtos" rotation="1">
+						
+						<mx:TextArea width="100%" height="100%">
+						
+						<mx:text>
+						
+							A HS Têxtil trabalha com a produção e venda de itens na área têxtil. Entre os itens produzidos podem ser destacados o Pano de prato, utilizado na secagem de loucas após a lavagem e a Estopa, geralmente utilizadas para tirar pó de móveis.
+						Além desses a empresa também realiza venda de toalhas de banho e rosto. 
+						
+						
+						</mx:text>
+						
+						</mx:TextArea>
+				
+				</mx:Panel>
+				
+				</mx:ViewStack>
+
+			</mx:Canvas>	
+
+		</mx:Canvas>	
+
+		
+
+			
+
+	</mx:Box>
+
+</mx:Application>
+

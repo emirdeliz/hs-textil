@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:orientation="vertical" android:layout_width="fill_parent"
+	android:layout_height="fill_parent" android:background="@drawable/background2">
+	<LinearLayout android:layout_height="wrap_content"
+		android:layout_marginLeft="10dip" android:layout_marginRight="10dip"
+		android:layout_width="fill_parent">
+		<TextView android:text="Serasa" android:layout_height="wrap_content"
+			style="@style/MenuFont" android:typeface="serif" android:textSize="25dip"
+			android:layout_width="wrap_content" android:textStyle="bold|italic"></TextView>
+	</LinearLayout>
+	<TextView android:layout_width="wrap_content"
+		android:layout_marginLeft="10dip" android:layout_marginRight="10dip"
+		android:layout_height="wrap_content" android:text="CPF/CNPJ:"
+		android:textColor="#FFFAFA" android:textStyle="bold"></TextView>
+	<LinearLayout android:layout_width="fill_parent"
+		android:layout_marginLeft="10dip" android:layout_marginRight="10dip"
+		android:layout_height="wrap_content">
+		<EditText android:id="@+id/txtNrIdentificadorSerasa"
+			android:layout_width="fill_parent" android:layout_height="wrap_content"
+			android:text="00027562000" android:numeric="integer"></EditText>
+	</LinearLayout>
+	<Button android:id="@+id/btConsultaSerasa" android:text="Consultar"
+		android:layout_marginLeft="10dip" android:layout_marginRight="10dip"
+		android:layout_height="wrap_content" android:layout_width="fill_parent"></Button>
+	<ScrollView android:layout_width="fill_parent" android:layout_weight="1" android:layout_height="wrap_content">
+		<LinearLayout android:orientation="vertical" android:layout_marginLeft="10dip" android:layout_marginRight="10dip"
+			android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_gravity="top">
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Nome:"
+				android:textColor="#FFFAFA" android:textStyle="bold"></TextView>
+			<EditText android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:id="@+id/txtNomeClienteSerasa"
+				android:editable="false"></EditText>
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Situação Documento:"
+				android:textColor="#FFFAFA" android:textStyle="bold"></TextView>
+			<EditText android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:id="@+id/txtSituacaoDocumentoSerasa"
+				android:editable="false"></EditText>
+			<TextView android:layout_width="wrap_content"
+				android:layout_height="wrap_content" android:text="Total Ocorrências:"
+				android:textColor="#FFFAFA" android:textStyle="bold"></TextView>
+			<EditText android:layout_width="fill_parent"
+				android:layout_height="wrap_content" android:id="@+id/txtTotalOcorrenciasSerasa"
+				android:editable="false"></EditText>
+		</LinearLayout>
+	</ScrollView>
+</LinearLayout>

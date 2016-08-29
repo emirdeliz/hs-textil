@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="586" title="Novo Produto" xmlns:component="br.com.hs.sistema.view.component.*" xmlns:control="br.com.thinklab.util.control.*" height="252">
+	<mx:Form width="100%">
+		<component:FormItemCustom label="Produto:" direction="horizontal" required="true">
+			<component:TextInputCustom styleName="small" id="txtIdProduto" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtProduto" editable="false"/>			
+			<mx:Button styleName="btZoom" click="abrirZoomMaterial()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdProduto, txtProduto])}"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Quantidade:" direction="horizontal" required="true">
+			<component:TextInputCustom styleName="small" id="txtQuantidade" restrict="0-9" change="atualizaDadosProduto()" maxChars="7"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Quantidade Estoque:" direction="horizontal">
+			<component:TextInputCustom styleName="small" id="txtQuantidadeEstoque" change="atualizaDadosProduto()" maxChars="7" editable="false"/>
+			<mx:Image source="br/com/hs/sistema/view/assets/img/icones/atencao.gif" visible="false" id="atencao"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Valor unitário:" direction="horizontal" required="false">
+			<control:DecimalInput styleName="small" id="txtValorUnitario" change="atualizaDadosProduto()" maxChars="8" currencyFormat="BR" precision="2" text="0,00" editable="false"/>			
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Valor total:" direction="horizontal">
+			<control:DecimalInput styleName="small" id="txtValorTotal"  maxChars="8" currencyFormat="BR" precision="2" text="0,00" editable="false"/>			
+		</component:FormItemCustom>
+	</mx:Form>
+	<mx:HBox>
+		<mx:Button id="btSelecionar" styleName="btSelecionar" click="addProduto()"/>					
+		<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import mx.events.CloseEvent;
+			import br.com.hs.model.entity.ProdutoVenda;
+			import br.com.hs.model.entity.Produto;
+			import br.com.hs.sistema.view.zoom.ZoomProduto;
+			import br.com.hs.sistema.view.zoom.ZoomMaterialFornecedor;
+			import mx.controls.Alert;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.rpc.AbstractOperation;
+			import mx.managers.PopUpManager;
+			import br.com.hs.model.entity.MaterialCompra;
+			import br.com.hs.model.entity.Material;
+			import br.com.hs.model.remote.ServiceLocator;
+			import flash.sampler.getMemberNames;
+			import br.com.hs.model.entity.Fornecedor;						
+			
+			private var callbackFunction:Function;
+			
+			[Bindable]
+			private var produto:Produto;
+					
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}		
+			
+			private function abrirZoomMaterial():void{
+				var frm:ZoomProduto = new ZoomProduto();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaProduto;			   						
+			}
+			
+			private function selecionaProduto(p:Produto):void{
+				txtIdProduto.text = p.id;
+				txtProduto.text = p.nome;
+				txtQuantidadeEstoque.text = p.qtdEstoque.toString();				
+				txtValorUnitario.text = Utils.formatDec(p.valor.toString());
+				this.produto = p;
+			}
+			
+			private function confirmAddProduto(event:CloseEvent):void{				
+				if(event == null || event.detail == Alert.YES){
+					var qtd:Number = Number(Utils.parseDec(txtQuantidade.text));										
+					this.produto.qtdEstoque = this.produto.qtdEstoque - qtd;
+					this.produto.ultimaVenda = new Date();
+					
+					var pv:ProdutoVenda = new ProdutoVenda();
+					pv.produto = this.produto;
+					pv.quantidade = qtd;
+					pv.valorUnitario = Utils.parseDec(this.txtValorUnitario.decimalText);
+					pv.valorTotal = Utils.parseDec(this.txtValorTotal.decimalText);
+										
+					callbackFunction(pv);
+					this.fechar();
+				}
+			}
+			
+			private function addProduto():void{
+				if(!Utils.validaCampos([txtProduto, txtQuantidade, txtValorTotal])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}
+			
+				var qtdEstoque:Number = new Number(Utils.parseDec(txtQuantidadeEstoque.text));
+				var qtd:Number = new Number(Utils.parseDec(txtQuantidade.text));
+				if(this.atencao.visible){
+					Alert.show("A quantidade do produto informado excede a quantidade do estoque. Deseja continuar?", "", Alert.YES|Alert.NO, this, confirmAddProduto, null, Alert.NO);
+				}else{
+					confirmAddProduto(null);
+				}				
+			}
+			
+			private function atualizaDadosProduto():void{				
+				var qtdEstoque:Number = new Number(Utils.parseDec(txtQuantidadeEstoque.text));
+				var qtd:Number = new Number(Utils.parseDec(txtQuantidade.text));
+				var vlUnitario:Number = new Number(Utils.parseDec(txtValorUnitario.text));
+				this.txtValorTotal.text = Utils.formatDec((qtd*vlUnitario).toString());
+				this.atencao.visible = (qtd>qtdEstoque);									
+			}
+			
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

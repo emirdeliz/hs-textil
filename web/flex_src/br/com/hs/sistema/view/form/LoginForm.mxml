@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Panel xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:s="library://ns.adobe.com/flex/spark" width="356" layout="absolute" horizontalAlign="center" verticalAlign="middle" title="Login" xmlns:component="br.com.hs.sistema.view.component.*" height="173">
+	<mx:Form verticalCenter="13" width="100%" height="100%">			
+		<component:FormItemCustom label="Usuário:" width="203">
+			<component:TextInputCustom id="txtUsuario" styleName="normal" text="aline"/>
+		</component:FormItemCustom >
+		<component:FormItemCustom  label="Senha:" width="203">
+			<component:TextInputCustom id="txtSenha" styleName="normal" displayAsPassword="true" text="123"/>
+		</component:FormItemCustom >
+		<mx:HBox verticalAlign="middle" width="100%">		
+			<mx:Button label="Acessar" click="autenticar()"/>
+		</mx:HBox>
+	</mx:Form>	
+	
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.sistema.constant.TipoLogin;
+			import com.adobe.crypto.MD5;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.messaging.channels.HTTPChannel;
+			import mx.messaging.messages.HTTPRequestMessage;
+			import mx.rpc.http.HTTPService;
+			
+			import mx.messaging.FlexClient;
+			import mx.utils.ObjectUtil;
+			import mx.controls.Alert;
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.AbstractOperation;
+			import mx.rpc.remoting.mxml.RemoteObject;
+			import mx.rpc.events.ResultEvent;
+							
+			public function autenticar():void{				
+				var remoteObject:RemoteObject = ServiceLocator.getUsuarioService();							
+				var operation:AbstractOperation = remoteObject.getOperation("autenticarFuncionario");				
+				operation.addEventListener(ResultEvent.RESULT, onResultAutenticar);		
+				remoteObject.autenticarFuncionario(txtUsuario.text.toLowerCase(), MD5.hash(txtSenha.text.toLowerCase()));				
+			}
+			
+			public function onResultAutenticar(event:ResultEvent):void{
+				var obj:Object = event.result;
+				
+				if(obj!=null){
+					parentDocument.iniciar(obj);
+				}else{				
+					Alert.show("Usuário ínvalido");
+				} 		 		
+		 	}			
+		]]>
+	</mx:Script>
+</mx:Panel>
+	
+

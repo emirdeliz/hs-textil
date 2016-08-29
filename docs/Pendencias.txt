@@ -1,0 +1,14 @@
+Pendencias
+
+- Descricao caso de uso:
+
+	- Se a opcao for novo:
+	- Se a opcao for editar:
+	- Se a opcao for excluir:
+
+- Diagrama de sequencia:
+	
+	- Incluir legenda
+	- Mudar linha de vida de | para colunas
+				 |  
+				

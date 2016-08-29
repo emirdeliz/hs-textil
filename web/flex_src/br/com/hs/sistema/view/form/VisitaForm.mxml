@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="552" title="Manutenção Visita" 
+		xmlns:component="br.com.hs.sistema.view.component.*" showCloseButton="true" close="{this.fechar()}">
+	<mx:Form width="100%" height="100%">
+		<component:FormItemCustom label="Cliente:" direction="horizontal" required="true">	
+			<component:TextInputCustom styleName="small" id="txtIdCliente" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtCliente" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidCliente" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomCliente()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdCliente, txtCliente, txtOidCliente]);}"/>
+		</component:FormItemCustom>
+		<component:FormItemCustom label="Representante:" direction="horizontal">	
+			<component:TextInputCustom styleName="small" id="txtIdRepresentante" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtRepresentante" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidRepresentante" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomRepresentante()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdRepresentante, txtRepresentante, txtOidRepresentante]);}"/>
+		</component:FormItemCustom>
+		<mx:FormItem label="Data contato:" required="true">
+			<mx:DateField id="txtDataContato" formatString="DD/MM/YYYY"/>
+		</mx:FormItem>
+		<mx:FormItem label="Data agendada:" required="true">
+			<mx:DateField id="txtDataAgendada" formatString="DD/MM/YYYY"/>
+		</mx:FormItem>
+		<mx:FormItem label="Data visita:">
+			<mx:DateField id="txtDataVisita" formatString="DD/MM/YYYY"/>
+		</mx:FormItem>
+		<component:FormItemCustom label="Observação:" height="50">
+			<component:TextAreaCustom id="txtObservacao"/>		
+		</component:FormItemCustom>
+		<mx:FormItem>
+			<mx:CheckBox label="Visita cancela" id="cbxVisitaCandelada"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:HBox>
+		<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+		<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import br.com.hs.sistema.view.zoom.ZoomCliente;
+			import br.com.hs.sistema.view.zoom.ZoomRepresentante;
+			import br.com.hs.model.entity.Cliente;
+			import br.com.hs.model.entity.Representante;
+			import br.com.hs.model.entity.Visita;
+			import br.com.hs.sistema.view.utils.Utils;
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;			
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;
+			import br.com.hs.model.entity.Atendimento;			
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:Visita;
+			
+			private var callbackFunction:Function;
+			
+			public function set entidade(item:Object):void{	
+				this.item = item as Visita;	
+				if(this.item!=null){
+					this.txtCliente.text = this.item.cliente.nome;
+					this.txtIdCliente.text = this.item.cliente.id;
+					this.txtOidCliente.text = this.item.cliente.oid.toString();
+					if(this.item.representante!=null){
+						this.txtRepresentante.text = this.item.representante.nome;
+						this.txtIdRepresentante.text = this.item.representante.id;
+						this.txtOidRepresentante.text = this.item.representante.oid.toString();
+					}
+					this.txtObservacao.text = this.item.observacao;
+					this.txtDataAgendada.selectedDate = this.item.dataAgenda;
+					this.txtDataContato.selectedDate = this.item.dataContato;
+					this.txtDataVisita.selectedDate = this.item.dataVisita; 
+					this.cbxVisitaCandelada.selected = this.item.inativo;
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+					
+			private function salvar():void{
+				
+				if(!Utils.validaCampos([txtOidCliente, txtDataAgendada, txtDataContato])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}	
+				
+				if(this.item == null){
+					this.item = new Visita();
+					this.item.cliente = new Cliente();									
+				}
+				
+				if(this.txtOidRepresentante.text!=""){
+					if(this.item.representante==null){
+						this.item.representante = new Representante();
+					}
+					this.item.representante.oid= new Number(this.txtOidRepresentante.text);
+				}		
+				this.item.cliente.oid= new Number(this.txtOidCliente.text);						
+				this.item.observacao = this.txtObservacao.text;
+				this.item.dataAgenda = this.txtDataAgendada.selectedDate;
+				this.item.dataContato = this.txtDataContato.selectedDate;
+				this.item.dataVisita = this.txtDataVisita.selectedDate;
+				this.item.inativo = this.cbxVisitaCandelada.selected; 
+										
+				var remoteObject:RemoteObject = ServiceLocator.getVisitaService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);		
+				remoteObject.salvar(this.item);
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");
+				callbackFunction();
+				fechar();
+			}
+			
+			private function abrirZoomCliente():void{
+				var frm:ZoomCliente = new ZoomCliente();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaCliente;						
+			}
+			
+			private function selecionaCliente(c:Cliente):void{
+				txtIdCliente.text = c.id;
+				txtCliente.text = c.nome;
+				txtOidCliente.text = c.oid.toString();				
+			}
+			
+			private function abrirZoomRepresentante():void{
+				var frm:ZoomRepresentante = new ZoomRepresentante();
+				PopUpManager.addPopUp(frm, this, true);
+				PopUpManager.centerPopUp(frm);					
+			    frm.callback = selecionaRepresentante;						
+			}
+			
+			private function selecionaRepresentante(r:Representante):void{
+				txtIdRepresentante.text = r.id;
+				txtRepresentante.text = r.nome;
+				txtOidRepresentante.text = r.oid.toString();				
+			}
+						
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

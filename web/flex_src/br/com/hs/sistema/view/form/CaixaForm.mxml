@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" width="482" height="316" 
+	title="Manutenção Caixa" xmlns:ns2="br.com.thinklab.util.control.*"  showCloseButton="true" close="{this.fechar()}">
+	<mx:Form width="100%" height="100%">
+		<mx:FormItem label="Tipo:">
+			<mx:ComboBox id="cbxTipo">
+				<mx:dataProvider>
+					<mx:ArrayCollection>
+						<mx:Object data="{TipoCaixa.RECEITA}" label="Receita"/>
+						<mx:Object data="{TipoCaixa.DESPESA}" label="Despesa"/>
+					</mx:ArrayCollection>
+				</mx:dataProvider>				
+			</mx:ComboBox>
+		</mx:FormItem>
+		<mx:FormItem label="{(this.cbxTipo.selectedItem.data!=TipoCaixa.DESPESA?'Responsável':'Favorecido') + ':'}" direction="horizontal">
+			<mx:TextInput styleName="small" id="txtIdEnvolvido"/>
+			<mx:TextInput styleName="normal" id="txtEnvolvido"/>
+			<mx:TextInput styleName="normal" id="txtOidEnvolvido" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomEnvolvido()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtEnvolvido, txtIdEnvolvido, txtOidEnvolvido])}"/>			
+		</mx:FormItem>
+		<mx:FormItem label="Data vencimento:">
+			<mx:DateField styleName="small" id="txtVencimento"/>
+		</mx:FormItem>
+		<mx:FormItem label="Data lançamento:">
+			<mx:TextInput styleName="small" id="txtLancamento"/>
+		</mx:FormItem>
+		<mx:FormItem label="Valor unitário:" required="true">
+			<ns2:DecimalInput styleName="small" id="txtValor" text="0,00" currencyFormat="BR" precision="2"/>
+		</mx:FormItem>
+	</mx:Form>
+	<mx:HBox>
+		<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+		<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+	</mx:HBox>
+	<mx:Script>		
+		<![CDATA[
+			import mx.core.IFlexDisplayObject;
+			import br.com.hs.sistema.view.zoom.ZoomFornecedor;
+			import br.com.hs.sistema.view.zoom.ZoomCliente;
+			import br.com.hs.model.entity.Fornecedor;
+			import br.com.hs.model.entity.Venda;
+			import br.com.hs.model.entity.Cliente;
+			import br.com.hs.model.entity.Caixa;
+			import br.com.hs.sistema.view.utils.Utils;
+			import br.com.hs.sistema.constant.TipoCaixa;
+			import br.com.hs.model.entity.FluxoCaixa;		
+			import mx.containers.Form;			
+			import mx.rpc.AbstractOperation;
+			import mx.binding.utils.BindingUtils;
+			import mx.managers.PopUpManager;			
+			import br.com.hs.model.remote.ServiceLocator;
+			import mx.rpc.events.ResultEvent;
+			import mx.controls.Alert;						
+			import mx.rpc.remoting.mxml.RemoteObject;
+			
+			[Bindable]
+			private var item:FluxoCaixa;
+			
+			private var callbackFunction:Function;
+			
+			public function set entidade(item:Object):void{	
+				//this.item = item as FluxoCaixa;	
+				//var tipo:int = this.item.caixa.tipo;
+				if(this.item!=null){
+					this.cbxTipo.selectedItem.data = item.tipo;					
+					this.txtEnvolvido.text = item.envolvido; //(tipo!=TipoCaixa.DESPESA?this.item.cliente.nome:this.item.fornecedor.nome);
+					this.txtIdEnvolvido.text = item.envolvidoId ;//(tipo!=TipoCaixa.DESPESA?this.item.cliente.id:this.item.fornecedor.id);
+					this.txtOidEnvolvido.text = item.envolvidoOid; //(tipo!=TipoCaixa.DESPESA?this.item.cliente.oid:this.item.fornecedor.oid).toString();
+					this.txtVencimento.text = Utils.formatDat(item.vencimento);
+					this.txtLancamento.text = Utils.formatDat(item.lancamento);	
+					this.txtValor.text =  Utils.formatDec(item.valor);				
+				}							
+			}
+			
+			public function set callback(callbackFunction:Function):void{
+				this.callbackFunction = callbackFunction;
+			}
+			
+			public function set formLeitura(leitura:Boolean):void{
+				Utils.desabilitar(this, leitura);
+				this.btFechar.visible=true;
+        		this.btFechar.includeInLayout=true;
+			}
+					
+			private function salvar():void{
+				
+				if(!Utils.validaCampos([txtOidEnvolvido, txtVencimento, txtValor])){
+					Alert.show("Favor, preencha os campos obrigatórios");
+					return;
+				}	
+				
+				if(this.item == null){
+					this.item = new FluxoCaixa();									
+				}
+					
+				var e:Object;				
+				
+				if(this.cbxTipo.selectedItem.data == TipoCaixa.RECEITA){
+					e = new Cliente();
+					e.oid = new Number(txtOidEnvolvido.text);
+					this.item.cliente = e as Cliente;										
+				}else{
+					e = new Fornecedor();
+					e.oid = new Number(txtOidEnvolvido.text);
+					this.item.fornecedor = e as Fornecedor;
+				}
+				
+				var c:Caixa = new Caixa();
+				c.dataCaixa = new Date(this.txtLancamento.text);
+				c.dataVencimento = this.txtVencimento.selectedDate;
+				c.tipo = this.cbxTipo.selectedItem.data;
+				c.valor = Utils.parseDec(this.txtValor.text);								
+				this.item.caixa = c;
+							
+				var remoteObject:RemoteObject = ServiceLocator.getFluxoCaixaService();					
+				var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+				operation.addEventListener(ResultEvent.RESULT, onResultSalvar);		
+				remoteObject.salvar(this.item);
+			}
+			
+			private function onResultSalvar(event:ResultEvent):void{
+				Alert.show("Salvo com sucesso");
+				callbackFunction();
+				fechar();
+			}
+			
+			private function abrirZoomEnvolvido():void{
+				var tipo:Number = this.cbxTipo.selectedItem.data;
+				var frm:Object = (tipo == TipoCaixa.RECEITA?new ZoomCliente():new ZoomFornecedor());
+				PopUpManager.addPopUp(frm as IFlexDisplayObject, this, true);
+				PopUpManager.centerPopUp(frm as IFlexDisplayObject);					
+				frm.callback = selecionaEnvolvido;						
+			}
+			
+			private function selecionaEnvolvido(e:Object):void{
+				this.txtEnvolvido.text = e.nome;
+				this.txtIdEnvolvido.text  = e.id;
+				this.txtOidEnvolvido.text  = e.oid;
+			}
+								
+			private function fechar():void{
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:custom="*" 
+ 	backgroundAlpha="1" 
+    xmlns:ns1="br.com.hs.sistema.view.form.*" backgroundColor="#DEE0DF">
+     <mx:backgroundImage>@Embed(source='br/com/hs/sistema/view/assets/img/siteBackground.jpg')</mx:backgroundImage>
+     <!-- <mx:Style source="br\com\hs\sistema\view\assets\style\yflexskin.css"/>  
+     <mx:Style source="br\com\hs\sistema\view\assets\style\WindowsClassic.css"/>  -->  
+     <mx:Style source="br\com\hs\sistema\view\assets\style\WindowsClassic.css"/>   
+     <mx:HBox width="100%" height="100%" horizontalAlign="center" verticalAlign="middle">
+     	 <mx:Image source="br/com/hs/sistema/view/assets/img/background-application.png"/>
+  	 	<ns1:LoginForm  id="frmLogin"/>
+     </mx:HBox>              
+      <mx:Script>
+      	<![CDATA[
+      		import br.com.hs.sistema.view.form.MasterPage;
+      		
+      		private var master:MasterPage;
+      		
+      		private var usuario:Object;
+      		
+      		public function iniciar(usuario:Object):void{  
+      			this.usuario = usuario;    			
+				this.master = new MasterPage();			
+				this.removeAllChildren();				
+				this.addChild(this.master);						 		
+			}
+			
+			public function get usuarioCorrente():Object{
+				return this.usuario;
+			}
+      	]]>
+      </mx:Script> 
+</mx:Application>

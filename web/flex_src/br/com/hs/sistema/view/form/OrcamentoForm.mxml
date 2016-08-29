@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="596" showCloseButton="true" close="{this.fechar()}"
+	xmlns:component="br.com.hs.sistema.view.component.*" xmlns:control="br.com.thinklab.util.control.*" title="Manutenção Orçamento">
+	<mx:Form width="100%" height="100%">
+		<mx:FormItem label="Data:">
+			<mx:DateField id="txtData" formatString="DD/MM/YYYY"/>
+		</mx:FormItem>		
+		<component:FormItemCustom label="Cliente:" direction="horizontal" required="true">	
+			<component:TextInputCustom styleName="small" id="txtIdCliente" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtCliente" editable="false"/>
+			<component:TextInputCustom styleName="normal" id="txtOidCliente" visible="false" includeInLayout="false"/>
+			<mx:Button styleName="btZoom" click="abrirZoomCliente()"/>
+			<mx:Button styleName="btLimpar" click="{Utils.limpaCampos([txtIdCliente, txtCliente, txtOidCliente]); this.grid.dataProvider = null}"/>
+		</component:FormItemCustom>	
+		<mx:FormItem label="Valor total:">
+			<control:DecimalInput styleName="small" id="txtValorTotal" text="0,00" currencyFormat="BR" precision="2" maxChars="7" editable="false"/>
+		</mx:FormItem>
+		<component:FormItemCustom label="Produtos:" width="100%">
+			<mx:DataGrid width="100%" id="grid" rowCount="4">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Cliente" dataField="produto.nome" width="6"/>	
+					<mx:DataGridColumn headerText="Quantidade" dataField="quantidade" width="2"/>			
+				</mx:columns>
+			</mx:DataGrid>			
+			<mx:HBox verticalAlign="middle" width="100%">
+				<mx:Button id="btAdicionar" styleName="btNovo" click="adicionarItem()"/>					
+				<mx:Button id="btRemover" styleName="btExcluir" click="removerItem()"/>					
+			</mx:HBox>
+		</component:FormItemCustom>
+		<mx:HBox>
+			<mx:Button id="btSalvar" styleName="btSalvar" click="salvar()"/>					
+			<mx:Button id="btFechar" styleName="btFechar" click="fechar()"/>					
+		</mx:HBox>
+		<mx:Script>
+			<![CDATA[
+				import br.com.hs.model.entity.ProdutoVenda;
+				import br.com.hs.sistema.view.zoom.ZoomCliente;
+				import br.com.hs.model.entity.Cliente;
+				import mx.collections.ArrayCollection;
+				import br.com.hs.sistema.view.utils.Utils;
+				import mx.containers.Form;			
+				import mx.rpc.AbstractOperation;
+				import mx.binding.utils.BindingUtils;
+				import mx.managers.PopUpManager;
+				import br.com.hs.model.entity.Orcamento;
+				import br.com.hs.model.remote.ServiceLocator;
+				import mx.rpc.events.ResultEvent;
+				import mx.controls.Alert;
+				import br.com.hs.model.entity.Atendimento;			
+				import mx.rpc.remoting.mxml.RemoteObject;
+				
+				[Bindable]
+				private var item:Orcamento;
+				
+				private var callbackFunction:Function;
+				
+				public function set entidade(item:Object):void{	
+					this.item = item as Orcamento;	
+					if(this.item!=null){
+						this.txtCliente.text = this.item.cliente.nome;
+						this.txtIdCliente.text = this.item.cliente.id;
+						this.txtOidCliente.text = this.item.cliente.oid.toString();
+						this.txtData.selectedDate = this.item.data;
+						this.grid.dataProvider = this.item.produtos;
+						this.atualizaValorTotal();
+					}							
+				}
+				
+				public function set callback(callbackFunction:Function):void{
+					this.callbackFunction = callbackFunction;
+				}
+				
+				public function set formLeitura(leitura:Boolean):void{
+					Utils.desabilitar(this, leitura);
+					this.btFechar.visible=true;
+	        		this.btFechar.includeInLayout=true;
+				}	
+				
+				private function salvar():void{
+				
+					if(!Utils.validaCampos([txtOidCliente, txtData]) || this.grid.dataProvider == null || 
+					  (this.grid.dataProvider as ArrayCollection).length <=0){
+						Alert.show("Favor, preencha os campos obrigatórios");
+						return;
+					}	
+					
+					if(this.item == null){
+						this.item = new Orcamento();	
+						this.item.cliente = new Cliente();								
+					}
+					
+					this.item.cliente.oid = new Number(this.txtOidCliente.text);
+					this.item.produtos = this.grid.dataProvider as ArrayCollection;	
+					this.item.data = txtData.selectedDate;				
+											
+					var remoteObject:RemoteObject = ServiceLocator.getOrcamentoService();					
+					var operation:AbstractOperation = remoteObject.getOperation("salvar");				
+					operation.addEventListener(ResultEvent.RESULT, onResultSalvar);		
+					remoteObject.salvar(this.item);
+				}
+				
+				private function abrirZoomCliente():void{
+					var frm:ZoomCliente = new ZoomCliente();
+					PopUpManager.addPopUp(frm, this, true);
+					PopUpManager.centerPopUp(frm);					
+				    frm.callback = selecionaCliente;						
+				}
+				
+				private function selecionaCliente(c:Cliente):void{
+					txtIdCliente.text = c.id;
+					txtCliente.text = c.nome;
+					txtOidCliente.text = c.oid.toString();				
+				}
+				
+				private function adicionarItem():void{							
+					var frm:ItemProduto = new ItemProduto();
+					PopUpManager.addPopUp(frm, this, true);
+					PopUpManager.centerPopUp(frm);					
+					frm.callback = atualizaProduto;										
+				}
+				
+				private function atualizaProduto(m:ProdutoVenda):void{
+					if(this.grid.dataProvider==null)
+						this.grid.dataProvider = new ArrayCollection();				
+					this.grid.dataProvider.addItem(m);	
+					this.atualizaValorTotal();						
+				}
+				
+				private function removerItem():void{
+					if(this.grid.selectedItem == null){
+						Alert.show("Selecione o item a ser removido");
+					}else{
+						(this.grid.dataProvider as ArrayCollection).removeItemAt(this.grid.selectedIndex);					
+					}
+					this.atualizaValorTotal()
+				}
+				
+				private function atualizaValorTotal():void{
+					var vTotal:Number = 0;
+					for each(var p:ProdutoVenda in grid.dataProvider){
+						vTotal+=p.valorTotal;
+					}
+					this.txtValorTotal.text = Utils.formatDec(vTotal.toString());
+				}
+				
+				private function onResultSalvar(event:ResultEvent):void{
+					Alert.show("Salvo com sucesso");
+					callbackFunction();
+					fechar();
+				}	
+								
+				private function fechar():void{
+					PopUpManager.removePopUp(this);
+				}
+			]]>
+		</mx:Script>
+	</mx:Form>
+</mx:TitleWindow>

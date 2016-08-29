@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="95%" height="95%">
+	<mx:Label x="10" y="57.15" text="PORTFÓLIO" fontWeight="bold" fontSize="23" color="#FFFFFF"/>
+	<mx:Text width="440" x="9.1" y="89.25" fontSize="10" color="#FFFFFF" text="A HS Têxtil trabalha com a produção e venda de itens na área têxtil. Entre os itens produzidos podem ser destacados o Pano de prato, utilizado na secagem de loucas após a lavagem e a Estopa, geralmente utilizadas para tirar pó de móveis.&#xa;Além desses a empresa também realiza venda de toalhas de banho e rosto. &#xa;" height="154.75"/>
+	<mx:HRule x="0.05" y="89.15" width="100%"/>
+</mx:Canvas>
